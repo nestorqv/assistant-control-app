@@ -1,0 +1,33 @@
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Runtime
+uploads/
+*.log
+logs/
+
+# Java
+target/
+
+# Node
+node_modules/
+dist/
+dev-dist/
+coverage/
+*.tsbuildinfo
+
+# IDE
+.idea/
+*.iml
+.vscode/*
+!.vscode/extensions.json
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Claude
+.claude/settings.local.json
+claude-agents-setup.zip
