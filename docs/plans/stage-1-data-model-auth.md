@@ -1,5 +1,7 @@
 # Stage 1 - Data model + authentication
 
+> **Renamed per Stage 1b (2026-10-22).** Identifiers in this plan are the original Spanish names. The code, schema, API and JWT now use English names (`marca` -> `time_entry`, root package `cr.attendance`, error codes such as `INVALID_CREDENTIALS`, claims `companyId`/`role`). Mapping: `docs/naming-inventory.md`. Plan: `docs/plans/stage-1b-english-naming-i18n.md`.
+
 Roadmap: `docs/plans/00-roadmap.md`. Previous stage: `docs/plans/stage-0-foundation.md`. Blueprint: `docs/prototype/Prototipo-Control-Asistencia.pdf`.
 Status: PLANNED 2026-10-21. Open questions RESOLVED 2026-10-21 (see the end). No code written yet.
 

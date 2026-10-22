@@ -1,15 +1,12 @@
-import { render, screen } from '@testing-library/react'
-import { MemoryRouter } from 'react-router'
+import { screen } from '@testing-library/react'
 import { expect, test, vi } from 'vitest'
 import App from './App'
+import type { Language } from './i18n/language'
+import { renderWithI18n } from './test/renderWithI18n'
 
-function renderAt(path: string) {
+function renderAt(path: string, lang: Language = 'es') {
   vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')))
-  return render(
-    <MemoryRouter initialEntries={[path]}>
-      <App />
-    </MemoryRouter>,
-  )
+  return renderWithI18n(<App />, { route: path, lang })
 }
 
 test('/ renders the employee home', async () => {
@@ -40,4 +37,23 @@ test('/admin/ with trailing slash still renders admin', async () => {
 test('each page renders the health status region', async () => {
   renderAt('/')
   await screen.findByRole('status')
+})
+
+test('English renders the same routes in English', async () => {
+  const { unmount } = renderAt('/', 'en')
+  await screen.findByRole('heading', { name: 'Attendance Control' })
+  unmount()
+
+  const admin = renderAt('/admin', 'en')
+  await screen.findByRole('heading', { name: 'Admin panel' })
+  admin.unmount()
+
+  renderAt('/nowhere', 'en')
+  await screen.findByText('Page not found')
+})
+
+test.each(['/', '/admin', '/no-existe'])('the language switcher is present on %s', async (path) => {
+  renderAt(path)
+  expect(await screen.findByRole('group', { name: 'Idioma' })).toBeDefined()
+  expect(screen.getByRole('button', { name: 'English' })).toBeDefined()
 })

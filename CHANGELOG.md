@@ -1,5 +1,30 @@
 # Changelog
 
+## [2026-10-22]
+
+### Changed
+
+- Stage 1b (`docs/plans/stage-1b-english-naming-i18n.md`): every technical name is now English. Root package `cr.asistencia` -> `cr.attendance` (`AttendanceApplication`, Maven `attendance-backend`); subpackages `employee`, `company`, `timeentry`. Mapping: `docs/naming-inventory.md`.
+- Database (`V2__initial_schema.sql`, edited in place because it was never deployed): tables `company`, `branch`, `employee`, `work_schedule`, `time_entry` (was `marca`), `evidence`, `adjustment`, with English columns, constraints and indexes. Stored enum values are `EMPLOYEE`, `CLOCK_IN`/`CLOCK_OUT`, `MOBILE`, `VALID`/`PENDING_REVIEW`/`REJECTED`, `PHOTO`. `time_entry.status` is `varchar(20)` and `distance_meters` replaces `distancia_m`. The database `asistencia` and role `asistencia_app` keep their names.
+- API: `POST /api/me/consent`, `GET /api/admin/employees[/{id}]`; JSON fields `companyCode`, `employeeCode`, `expiresAt`, `employee`, `company`, `code`, `name`, `jobTitle`, `role`, `consentPending`, `active`, `branchId`, `timeZone`.
+- JWT claims `companyId` and `role`, issuer `attendance-backend`, authority `ROLE_EMPLOYEE`. Config keys `max-attempts`, `duration`, `window`, `ttl-employee`.
+- The PWA manifest stays Spanish (`es-CR`).
+- Backend tests: 335 (278 existing, renamed, plus 57 new). Frontend tests: 52.
+
+### Added
+
+- Bilingual (Spanish/English) API errors: `messages.properties` (Spanish base), `messages_es.properties`, `messages_en.properties`; the language comes from `Accept-Language` (supported `es`, `en`; default `es`, also for `*` and invalid headers); responses carry `Content-Language`. `ErrorCode` enum; `code` stays English and stable.
+- `InvalidPinException`, mapped to 400 `INVALID_PIN` (localized).
+- Frontend i18n without new runtime dependencies: typed `es`/`en` resources, `I18nProvider`, accessible `LanguageSwitcher` in a shared header (native buttons, `aria-pressed`, polite announcement), choice saved in `localStorage`, `<html lang>` and the page title kept in sync, `Accept-Language` sent on every API call through `apiFetch`.
+- `@testing-library/user-event` (dev dependency) for keyboard tests.
+- `scripts/db/reset-dev-schema.sql` to reset the dev schema once after the in-place `V2` edit (see README).
+- README section "Languages".
+- Stage 1b test coverage: English schema naming and enum CHECK constraints, rename regression tests (legacy `empresaId`/`rol` tokens and old URLs rejected), `Accept-Language` edge cases and localized 429. Frontend tests cover the provider, the no-hardcoded-text scan and app-level language switching. Totals: backend 398, frontend 83.
+
+### Removed
+
+- Spanish API error codes (`CREDENCIALES_INVALIDAS`, ...), JSON field names, URLs and JWT claim names. Tokens issued before this change (`empresaId`/`rol` claims) are rejected with 401; users log in again.
+
 ## [2026-10-21]
 
 ### Added

@@ -1,6 +1,6 @@
 # Control de Asistencia
 
-Attendance clock-in/out system for small companies in Costa Rica: an employee PWA plus an admin web panel. The UI is in Spanish; the documentation is in English.
+Attendance clock-in/out system for small companies in Costa Rica: an employee PWA plus an admin web panel. The UI is in Spanish and English (switchable, Spanish by default); the documentation is in English.
 
 Roadmap and stage plans: [docs/plans/00-roadmap.md](docs/plans/00-roadmap.md).
 
@@ -79,6 +79,16 @@ cd backend
 
 Git Bash: `./mvnw spring-boot:run`. Check `http://localhost:8080/api/health`.
 
+### Reset the dev schema
+
+Stage 1b edited `V2__initial_schema.sql` in place, so an existing dev database must be reset once or startup fails with a Flyway checksum mismatch. Stop the backend, then (psql asks for the `asistencia_app` password):
+
+```powershell
+& "C:\Program Files\PostgreSQL\16\bin\psql.exe" -U asistencia_app -h localhost -d asistencia -v ON_ERROR_STOP=1 -f scripts\db\reset-dev-schema.sql
+```
+
+The database `asistencia` and the role `asistencia_app` keep their names. Flyway recreates the tables on the next start.
+
 ### Dev data
 
 Run with the `dev` profile to create the demo company (idempotent; it never runs with `prod`):
@@ -92,11 +102,19 @@ It creates company `DEMO` ("Empresa Demo") with branch "Sucursal Centro", employ
 
 ### Authentication
 
-- `POST /api/auth/login` with `{"empresaCodigo","empleadoCodigo","pin"}` returns a Bearer JWT (HS256). Codes are case-insensitive.
+- `POST /api/auth/login` with `{"companyCode","employeeCode","pin"}` returns a Bearer JWT (HS256). Codes are case-insensitive.
 - Token lifetime: 8 hours for employees, 6 hours for admins. There are no refresh tokens: when it expires, the user enters the PIN again.
 - Every failure (unknown company or employee, inactive, locked, wrong PIN) returns the same 401. Five consecutive wrong PINs lock the employee for 15 minutes (automatic unlock). Someone who knows an employee code can lock that employee for 15 minutes; admin unlock arrives in Stage 4.
 - More than 20 login attempts per 5 minutes from one IP return 429.
-- Other endpoints: `GET /api/me`, `POST /api/me/consentimiento`, and `GET /api/admin/empleados[/{id}]` (admin only). Send `Authorization: Bearer <token>`.
+- Other endpoints: `GET /api/me`, `POST /api/me/consent`, and `GET /api/admin/employees[/{id}]` (admin only). Roles are `EMPLOYEE` and `ADMIN`. Send `Authorization: Bearer <token>`.
+
+## Languages
+
+- The UI has a language switcher (Español / English) in the header. The choice is saved in the browser; the default is the browser language when it is Spanish or English, otherwise Spanish.
+- The frontend sends `Accept-Language` on every API call. The backend supports `es` and `en` and answers in Spanish when the header is missing or the language is not supported.
+- Error bodies keep a stable English `code` (for example `INVALID_CREDENTIALS`); only `title` and `detail` are translated, and the response carries `Content-Language`.
+- Texts live in `backend/src/main/resources/messages*.properties` and `frontend/src/i18n/resources.ts`.
+- The installed-app name (PWA manifest) stays Spanish. Demo data (company, branch, people, job titles) stays Spanish.
 
 ## Frontend
 
@@ -137,8 +155,8 @@ npm run preview
 ## Layout
 
 ```
-backend/    Spring Boot 3.5 (Maven, Flyway, Java 21 bytecode), package cr.asistencia
+backend/    Spring Boot 3.5 (Maven, Flyway, Java 21 bytecode), package cr.attendance
 frontend/   React + Vite + TypeScript PWA
-scripts/db/ Dev database creation scripts
+scripts/db/ Dev database creation and reset scripts
 docs/       Plans and progress
 ```

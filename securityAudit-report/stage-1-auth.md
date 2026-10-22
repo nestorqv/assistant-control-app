@@ -1,3 +1,5 @@
+> Note (2026-10-22): identifiers in this report predate the Stage 1b English rename; see `docs/naming-inventory.md` for the mapping. Findings are unchanged.
+
 # Security Audit Report — Control de Asistencia (Stage 1: Data model + authentication)
 
 - **Date:** 2026-10-21

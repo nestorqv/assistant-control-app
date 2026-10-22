@@ -10,6 +10,7 @@ Roadmap: [plans/00-roadmap.md](plans/00-roadmap.md)
 |-------|--------|---------|-----------|
 | 0 - Foundation | Done | 2026-10-13 | 2026-10-20 |
 | 1 - Data model + auth | Done | 2026-10-21 | 2026-10-22 |
+| 1b - English naming + EN/ES | Done | 2026-10-22 | 2026-10-22 |
 | 2 - Check-in API | Not started | | |
 | 3 - Employee PWA | Not started | | |
 | 4 - Admin panel | Not started | | |
@@ -59,7 +60,25 @@ Plan: [plans/stage-0-foundation.md](plans/stage-0-foundation.md)
 - [x] User added `JWT_SECRET` (48 bytes) + `DEV_SEED_PIN` to `backend/.env`; app started with `dev` profile - 2026-10-22
 - [x] End-to-end check on the running server: health, 401 without/garbage token, employee login + `/api/me`, 403 on admin path for employee, admin login + list of 7 employees, wrong PIN 401 then reset - 2026-10-22
 - [x] Stage 1 committed (`5f50477`) and pushed to `origin/main` - 2026-10-22
-- [ ] Security audit
+- [x] Security audit (see above) - 2026-10-21
+
+## Stage 1b - English naming + bilingual text (EN/ES)
+
+Branch: `stage1-2`. Inventory: [naming-inventory.md](naming-inventory.md)
+
+- [x] Spanish naming inventory written (`docs/naming-inventory.md`) - 2026-10-22
+- [x] Decisions: all technical names in English; `marca` → `time_entry` / `TimeEntry` / package `timeentry`; user-readable text in EN + ES with a language switcher (`messages_es.properties` / `messages_en.properties`) - 2026-10-22
+- [x] Decision: keep local DB `asistencia` and role `asistencia_app` - 2026-10-22
+- [x] Plan written (`docs/plans/stage-1b-english-naming-i18n.md`) - 2026-10-22
+- [x] Open questions answered (manifest Spanish, `INVALID_PIN` now, `distance_meters`, add user-event) - 2026-10-22
+- [x] Backend rename: packages (`cr.attendance`), classes, methods, fields, DB schema (V2 edited in place, `status` widened to 20), enums, API, error codes, JWT claims, config keys - 2026-10-22
+- [x] Backend i18n: `MessageSource` + `Accept-Language` (default es), `INVALID_PIN` - 2026-10-22
+- [x] Frontend i18n: EN/ES resources + accessible language switcher - 2026-10-22
+- [x] Docs updated (diagram, README, roadmap, Stage 1 plan, inventory status) + `scripts/db/reset-dev-schema.sql` - 2026-10-22
+- [x] Coder's checks pass: backend 335 tests, frontend lint + build + 52 tests - 2026-10-22
+- [x] Tester review: no bugs, no unexpected Spanish leftovers; backend 398 tests, frontend 83 tests, lint + build clean - 2026-10-22
+- [x] User reset local dev DB; end-to-end check on the running server: English login fields and JSON, `/api/me`, 403/200 on `/api/admin/employees`, `INVALID_CREDENTIALS` with EN/ES detail and `Content-Language`, old Spanish fields 400 and old URLs 404, frontend proxy OK; user verified the language switcher in the browser - 2026-10-22
+- [ ] Committed and pushed to `stage1-2`
 
 ## Stage 2 - Check-in API
 

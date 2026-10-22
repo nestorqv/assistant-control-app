@@ -4,4 +4,4 @@ app:
 
 logging:
   level:
-    cr.asistencia: DEBUG
+    cr.attendance: DEBUG

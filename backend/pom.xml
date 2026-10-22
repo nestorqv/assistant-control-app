@@ -10,11 +10,11 @@
         <relativePath/>
     </parent>
 
-    <groupId>cr.asistencia</groupId>
-    <artifactId>asistencia-backend</artifactId>
+    <groupId>cr.attendance</groupId>
+    <artifactId>attendance-backend</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>asistencia-backend</name>
-    <description>Control de Asistencia - backend</description>
+    <name>attendance-backend</name>
+    <description>Attendance - backend</description>
 
     <properties>
         <java.version>21</java.version>

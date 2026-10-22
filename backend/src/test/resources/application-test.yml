@@ -5,4 +5,4 @@ app:
   security:
     bcrypt-strength: 4
     login-rate-limit:
-      max-intentos: 100000
+      max-attempts: 100000

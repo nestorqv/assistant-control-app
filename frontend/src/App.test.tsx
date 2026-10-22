@@ -1,17 +1,14 @@
-import { render, screen } from '@testing-library/react'
-import { MemoryRouter } from 'react-router'
+import { screen } from '@testing-library/react'
 import { expect, test, vi } from 'vitest'
 import App from './App'
+import { es } from './i18n/resources'
+import { renderWithI18n } from './test/renderWithI18n'
 
 test('renders the admin placeholder on /admin', async () => {
   vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')))
 
-  render(
-    <MemoryRouter initialEntries={['/admin']}>
-      <App />
-    </MemoryRouter>,
-  )
+  renderWithI18n(<App />, { route: '/admin' })
 
-  const heading = await screen.findByRole('heading', { name: 'Panel del administrador' })
+  const heading = await screen.findByRole('heading', { name: es['adminHome.title'] })
   expect(heading).toBeDefined()
 })
