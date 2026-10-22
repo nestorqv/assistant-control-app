@@ -11,7 +11,7 @@ Roadmap: [plans/00-roadmap.md](plans/00-roadmap.md)
 | 0 - Foundation | Done | 2026-10-13 | 2026-10-20 |
 | 1 - Data model + auth | Done | 2026-10-21 | 2026-10-22 |
 | 1b - English naming + EN/ES | Done | 2026-10-22 | 2026-10-22 |
-| 2 - Check-in API | Not started | | |
+| 2 - Check-in API | In progress | 2026-10-22 | |
 | 3 - Employee PWA | Not started | | |
 | 4 - Admin panel | Not started | | |
 | 5 - Hardening + deploy | Not started | | |
@@ -78,17 +78,19 @@ Branch: `stage1-2`. Inventory: [naming-inventory.md](naming-inventory.md)
 - [x] Coder's checks pass: backend 335 tests, frontend lint + build + 52 tests - 2026-10-22
 - [x] Tester review: no bugs, no unexpected Spanish leftovers; backend 398 tests, frontend 83 tests, lint + build clean - 2026-10-22
 - [x] User reset local dev DB; end-to-end check on the running server: English login fields and JSON, `/api/me`, 403/200 on `/api/admin/employees`, `INVALID_CREDENTIALS` with EN/ES detail and `Content-Language`, old Spanish fields 400 and old URLs 404, frontend proxy OK; user verified the language switcher in the browser - 2026-10-22
-- [ ] Committed and pushed to `stage1-2`
+- [x] Committed (`e952bec`) and pushed to `stage1-2` - 2026-10-22
 
 ## Stage 2 - Check-in API
 
-- [ ] Stage plan written + open questions answered
-- [ ] `GET /api/tiempo` (server time)
-- [ ] `GET /api/marcas/hoy`
-- [ ] `POST /api/marcas` with order validation and `client_uuid` idempotency
-- [ ] Haversine geofence → VALIDA / POR_REVISAR
+- [ ] Stage plan written (`docs/plans/stage-2-time-entry-api.md`) — planner started 2026-10-22
+- [ ] Open questions answered
+- [ ] Diagrams (architect): POST time-entry sequence + V3 ER changes
+- [ ] `GET /api/time` (server time)
+- [ ] `GET /api/time-entries/today`
+- [ ] `POST /api/time-entries` with order validation and `client_uuid` idempotency
+- [ ] Haversine geofence → VALID / PENDING_REVIEW
 - [ ] `StorageService` + `LocalDiskStorageService`, authenticated photo endpoint
-- [ ] Lateness from horario + tolerancia
+- [ ] Lateness from work_schedule + grace_minutes (company time zone)
 - [ ] Tests pass
 - [ ] Security audit
 
