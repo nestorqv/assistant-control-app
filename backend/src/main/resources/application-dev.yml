@@ -1,0 +1,7 @@
+app:
+  seed:
+    pin: ${DEV_SEED_PIN:}
+
+logging:
+  level:
+    cr.asistencia: DEBUG

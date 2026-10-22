@@ -7,22 +7,16 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
-import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider;
-import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseType;
+import cr.asistencia.support.IntegrationTest;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
-@SpringBootTest
-@AutoConfigureMockMvc
-@AutoConfigureEmbeddedDatabase(type = DatabaseType.POSTGRES, provider = DatabaseProvider.ZONKY)
+@IntegrationTest
 class SecurityAndActuatorTest {
 
     @Autowired
@@ -39,6 +33,22 @@ class SecurityAndActuatorTest {
                 .andExpect(jsonPath("$.components").doesNotExist())
                 .andReturn();
         assertThat(result.getResponse().getContentAsString()).doesNotContain("jdbc", "postgres");
+    }
+
+    @Test
+    void staleOrGarbageBearerTokenDoesNotBreakPublicHealthEndpoints() throws Exception {
+        for (String auth : new String[] {"Bearer not.a.jwt", "Bearer ", "Bearer " + "A".repeat(500)}) {
+            mockMvc.perform(get("/api/health").header("Authorization", auth)).andExpect(status().isOk());
+            mockMvc.perform(get("/actuator/health").header("Authorization", auth)).andExpect(status().isOk());
+        }
+    }
+
+    @Test
+    void staleBearerTokenStillFailsOnProtectedPaths() throws Exception {
+        mockMvc.perform(get("/api/me").header("Authorization", "Bearer not.a.jwt"))
+                .andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/api/health/extra").header("Authorization", "Bearer not.a.jwt"))
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -68,6 +78,17 @@ class SecurityAndActuatorTest {
         assertThat(result.getResponse().getHeader("WWW-Authenticate")).isNull();
         assertThat(result.getResponse().getCookies()).isEmpty();
         assertThat(result.getRequest().getSession(false)).isNull();
+    }
+
+    @Test
+    void getOnLoginIsNotSuccessful() throws Exception {
+        MvcResult result = mockMvc.perform(get("/api/auth/login")).andReturn();
+        assertThat(result.getResponse().getStatus()).isIn(401, 405);
+    }
+
+    @Test
+    void adminPathsWithoutTokenAreUnauthorized() throws Exception {
+        mockMvc.perform(get("/api/admin/x")).andExpect(status().isUnauthorized());
     }
 
     @Test

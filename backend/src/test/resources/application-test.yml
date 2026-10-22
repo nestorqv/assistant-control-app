@@ -1,0 +1,8 @@
+app:
+  jwt:
+    # TEST ONLY: fixed 48-byte value, not a real secret. Never reuse it anywhere else.
+    secret: dGVzdC1vbmx5LW5vdC1hLXJlYWwtc2VjcmV0LXRlc3Qtb25seS1ub3QtYS1yZWFsLXNlY3JldA==
+  security:
+    bcrypt-strength: 4
+    login-rate-limit:
+      max-intentos: 100000

@@ -18,6 +18,26 @@ spring:
           time_zone: UTC
   flyway:
     enabled: true
+  mvc:
+    problemdetails:
+      enabled: true
+
+app:
+  jwt:
+    # Empty default: JwtProperties fails at startup with a clear message instead of a placeholder error.
+    secret: ${JWT_SECRET:}
+    issuer: asistencia-backend
+    ttl-empleado: 8h
+    ttl-admin: 6h
+    clock-skew: 30s
+  security:
+    bcrypt-strength: 12
+    lockout:
+      max-intentos: 5
+      duracion: 15m
+    login-rate-limit:
+      max-intentos: 20
+      ventana: 5m
 
 server:
   port: 8080

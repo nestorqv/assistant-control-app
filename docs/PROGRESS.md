@@ -9,7 +9,7 @@ Roadmap: [plans/00-roadmap.md](plans/00-roadmap.md)
 | Stage | Status | Started | Completed |
 |-------|--------|---------|-----------|
 | 0 - Foundation | Done | 2026-10-13 | 2026-10-20 |
-| 1 - Data model + auth | Not started | | |
+| 1 - Data model + auth | Done | 2026-10-21 | 2026-10-22 |
 | 2 - Check-in API | Not started | | |
 | 3 - Employee PWA | Not started | | |
 | 4 - Admin panel | Not started | | |
@@ -33,18 +33,32 @@ Plan: [plans/stage-0-foundation.md](plans/stage-0-foundation.md)
 - [x] Coder's checks pass: backend 3 tests (embedded Postgres), frontend build + lint + 3 tests - 2026-10-13
 - [x] Tester review: backend 10 tests + frontend 20 tests pass, lint + build clean, no bugs found - 2026-10-13
 - [x] Backend connects to real local DB `asistencia`; Flyway applied V1 - 2026-10-20
+- [x] Initial commit `99c27c7` pushed to github.com/nestorqv/assistant-control-app (branch `main`) - 2026-10-21
 - [x] End-to-end check: frontend shows "Servidor en línea (UP)" through the proxy (run from the user's own terminal; Claude's sandboxed shell blocks Tomcat's local socket) - 2026-10-20
 
 ## Stage 1 - Data model + auth
 
-- [ ] Stage plan written + open questions answered
-- [ ] ER diagram (architect)
-- [ ] Flyway V1 schema: empresa, sucursal, empleado, horario, marca, evidencia, ajuste
-- [ ] JPA entities + repositories with tenant scoping
-- [ ] Login endpoint (company code + employee code + PIN), BCrypt, JWT
-- [ ] Lockout after 5 failed attempts; roles EMPLEADO / ADMIN
-- [ ] Dev seed data
-- [ ] Tests pass
+- [x] Stage plan written (`docs/plans/stage-1-data-model-auth.md`) - 2026-10-21
+- [x] Open questions answered (token 8 h employee / 6 h admin, 8-digit PIN, rest as recommended) - 2026-10-21
+- [x] Plan updated for the answers (8-digit PIN policy incl. date/sequence rejection) - 2026-10-21
+- [x] ER diagram (architect): `docs/diagrams/stage-1-er.md` - 2026-10-21
+- [x] Plan amended after architect review (tenant convention, constant-time login, `ajuste` columns, per-tenant `client_uuid`, `empresa.activo`, no package cycle) - 2026-10-21
+- [x] Flyway V2 schema: empresa, sucursal, empleado, horario, marca, evidencia, ajuste - 2026-10-21
+- [x] JPA entities + repositories with tenant scoping - 2026-10-21
+- [x] Login endpoint (company code + employee code + PIN), BCrypt, JWT - 2026-10-21
+- [x] Lockout after 5 failed attempts; roles EMPLEADO / ADMIN; per-IP rate limit - 2026-10-21
+- [x] Endpoints `/api/me`, `/api/me/consentimiento`, `/api/admin/empleados[/{id}]` - 2026-10-21
+- [x] Dev seed data (profile `dev`) - 2026-10-21
+- [x] Coder's checks pass: backend 119 tests (10 Stage 0 + 109 Stage 1) - 2026-10-21
+- [x] Tester review: 251 tests (132 new), 3 failing `knownBug_*` tests exposing 2 bugs - 2026-10-21
+- [x] Security audit: 0 Critical/High, 3 Medium, 7 Low, 8 Info (`securityAudit-report/stage-1-auth.md`) - 2026-10-21
+- [x] Audit decisions agreed: fix M-1 + L-2/L-3/L-4/L-5 now; M-2/M-3 direction set for Stage 5 - 2026-10-21
+- [x] Bug fixes: BUG 1 `horario` times shifted by JVM time zone; BUG 2 malformed-JSON 400 without `codigo` - 2026-10-22
+- [x] Audit fixes: M-1 lockout race, L-2 require `exp`/`iat`, L-3 weak JWT secret rejection, L-4 no input echo in 400, L-5 seeder only when `dev` explicitly active; public endpoints ignore stale bearer tokens - 2026-10-22
+- [x] Tests pass after fixes: 278 run, 0 failures (re-verified independently) - 2026-10-22
+- [x] User added `JWT_SECRET` (48 bytes) + `DEV_SEED_PIN` to `backend/.env`; app started with `dev` profile - 2026-10-22
+- [x] End-to-end check on the running server: health, 401 without/garbage token, employee login + `/api/me`, 403 on admin path for employee, admin login + list of 7 employees, wrong PIN 401 then reset - 2026-10-22
+- [ ] Stage 1 committed and pushed
 - [ ] Security audit
 
 ## Stage 2 - Check-in API
@@ -87,6 +101,8 @@ Plan: [plans/stage-0-foundation.md](plans/stage-0-foundation.md)
 
 - [ ] Stage plan written + open questions answered
 - [ ] Full OWASP security audit
+- [ ] Stage 1 audit M-2: rate-limit by empresa+empleado and IP network block (/64 IPv6); trust `X-Forwarded-For` only from Caddy
+- [ ] Stage 1 audit M-3: replace hard 15-min lock with growing delays (1 s → ~1 min) + admin alert
 - [ ] Photo retention job
 - [ ] VPS deploy: native PostgreSQL + Caddy HTTPS
 - [ ] Backups (database + uploads)
