@@ -58,7 +58,7 @@ Plan: [plans/stage-0-foundation.md](plans/stage-0-foundation.md)
 - [x] Tests pass after fixes: 278 run, 0 failures (re-verified independently) - 2026-10-22
 - [x] User added `JWT_SECRET` (48 bytes) + `DEV_SEED_PIN` to `backend/.env`; app started with `dev` profile - 2026-10-22
 - [x] End-to-end check on the running server: health, 401 without/garbage token, employee login + `/api/me`, 403 on admin path for employee, admin login + list of 7 employees, wrong PIN 401 then reset - 2026-10-22
-- [ ] Stage 1 committed and pushed
+- [x] Stage 1 committed (`5f50477`) and pushed to `origin/main` - 2026-10-22
 - [ ] Security audit
 
 ## Stage 2 - Check-in API
