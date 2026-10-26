@@ -1,5 +1,7 @@
 package cr.attendance.auth;
 
+import cr.attendance.common.TooManyAttemptsException;
+
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.PostMapping;

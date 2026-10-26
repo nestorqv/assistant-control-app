@@ -1,5 +1,7 @@
 package cr.attendance.auth;
 
+import cr.attendance.common.InvalidPinException;
+
 import java.time.DateTimeException;
 import java.time.LocalDate;
 

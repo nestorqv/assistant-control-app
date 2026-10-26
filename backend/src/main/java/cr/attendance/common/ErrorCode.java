@@ -10,7 +10,17 @@ public enum ErrorCode {
     UNSUPPORTED_MEDIA_TYPE,
     NOT_FOUND,
     INTERNAL_ERROR,
-    INVALID_PIN;
+    INVALID_PIN,
+    CONSENT_REQUIRED,
+    NO_BRANCH_ASSIGNED,
+    ALREADY_CLOCKED_IN,
+    NOT_CLOCKED_IN,
+    SHIFT_ALREADY_COMPLETED,
+    CLIENT_UUID_CONFLICT,
+    PHOTO_REQUIRED,
+    INVALID_PHOTO,
+    PAYLOAD_TOO_LARGE,
+    SERVER_BUSY;
 
     /** Message bundle key, e.g. error.INVALID_CREDENTIALS.title. */
     public String messageKey(String part) {

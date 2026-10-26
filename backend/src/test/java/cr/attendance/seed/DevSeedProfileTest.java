@@ -34,7 +34,11 @@ class DevSeedProfileTest {
     }
 
     private static DevDataSeeder seeder(MockEnvironment env, String pin, CompanyRepository companies) {
-        return new DevDataSeeder(env, new SeedProperties(pin), companies, mock(BranchRepository.class),
+        return seeder(env, new SeedProperties(pin, null, null, null), companies);
+    }
+
+    private static DevDataSeeder seeder(MockEnvironment env, SeedProperties props, CompanyRepository companies) {
+        return new DevDataSeeder(env, props, companies, mock(BranchRepository.class),
                 mock(EmployeeRepository.class), mock(WorkScheduleRepository.class), mock(PasswordEncoder.class));
     }
 
@@ -64,6 +68,27 @@ class DevSeedProfileTest {
             assertThatThrownBy(() -> seeder.run(null))
                     .isInstanceOf(IllegalStateException.class)
                     .hasMessage(DevDataSeeder.PIN_MESSAGE);
+        }
+        verifyNoInteractions(companies);
+    }
+
+    @Test
+    void invalidBranchLocationFailsWithTheDocumentedMessageBeforeTouchingTheDatabase() {
+        CompanyRepository companies = mock(CompanyRepository.class);
+        SeedProperties[] invalid = {
+            new SeedProperties("59173842", 91.0, -84.0, 100),
+            new SeedProperties("59173842", 9.9, -181.0, 100),
+            new SeedProperties("59173842", 9.9, null, 100),
+            new SeedProperties("59173842", null, -84.0, null),
+            new SeedProperties("59173842", Double.NaN, -84.0, 100),
+            new SeedProperties("59173842", 9.9, -84.0, 5),
+            new SeedProperties("59173842", 9.9, -84.0, 5001),
+        };
+        for (SeedProperties props : invalid) {
+            DevDataSeeder seeder = seeder(environment("dev"), props, companies);
+            assertThatThrownBy(() -> seeder.run(null))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessage(DevDataSeeder.LOCATION_MESSAGE);
         }
         verifyNoInteractions(companies);
     }

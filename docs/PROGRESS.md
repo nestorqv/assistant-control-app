@@ -11,7 +11,7 @@ Roadmap: [plans/00-roadmap.md](plans/00-roadmap.md)
 | 0 - Foundation | Done | 2026-10-13 | 2026-10-20 |
 | 1 - Data model + auth | Done | 2026-10-21 | 2026-10-22 |
 | 1b - English naming + EN/ES | Done | 2026-10-22 | 2026-10-22 |
-| 2 - Check-in API | In progress | 2026-10-22 | |
+| 2 - Check-in API | Done | 2026-10-22 | 2026-10-26 |
 | 3 - Employee PWA | Not started | | |
 | 4 - Admin panel | Not started | | |
 | 5 - Hardening + deploy | Not started | | |
@@ -82,17 +82,28 @@ Branch: `stage1-2`. Inventory: [naming-inventory.md](naming-inventory.md)
 
 ## Stage 2 - Check-in API
 
-- [ ] Stage plan written (`docs/plans/stage-2-time-entry-api.md`) — planner started 2026-10-22
-- [ ] Open questions answered
-- [ ] Diagrams (architect): POST time-entry sequence + V3 ER changes
-- [ ] `GET /api/time` (server time)
-- [ ] `GET /api/time-entries/today`
-- [ ] `POST /api/time-entries` with order validation and `client_uuid` idempotency
-- [ ] Haversine geofence → VALID / PENDING_REVIEW
-- [ ] `StorageService` + `LocalDiskStorageService`, authenticated photo endpoint
-- [ ] Lateness from work_schedule + grace_minutes (company time zone)
-- [ ] Tests pass
-- [ ] Security audit
+- [x] Stage plan written (`docs/plans/stage-2-time-entry-api.md`) - 2026-10-22
+- [x] Open questions answered (work date = clock-in date, max shift 16 h; lateness counted from scheduled start; add `deviceSentAt` + GPS accuracy; selfie REQUIRED) - 2026-10-22
+- [x] Plan updated for the answers (`PHOTO_REQUIRED`, replay without photo returns original, validation order fixed) - 2026-10-22
+- [x] Diagrams (architect): `docs/diagrams/stage-2-time-entry.md` - 2026-10-22
+- [x] Plan amended after architect review (rate limit before validation, no `common`↔`auth` cycle, consent/branch pre-check before photo work, no stuck state from 16 h rule → `SHIFT_TOO_LONG`) - 2026-10-22
+- [x] Flyway V3 migration (`work_date`, GPS accuracy, skew, lateness, review reasons; one pair per employee per work date) - 2026-10-23
+- [x] `GET /api/time` (server time) - 2026-10-23
+- [x] `GET /api/time-entries/today` - 2026-10-23
+- [x] `POST /api/time-entries` with photo required, order validation and `client_uuid` idempotency - 2026-10-23
+- [x] Haversine geofence → VALID / PENDING_REVIEW (+ review reasons) - 2026-10-23
+- [x] `StorageService` + `LocalDiskStorageService` (magic bytes, 2 MB cap, re-encode/EXIF strip), authenticated photo endpoints - 2026-10-23
+- [x] Lateness from work_schedule + grace_minutes (company time zone) - 2026-10-23
+- [x] Dev seed location overrides (`DEV_SEED_LAT/LNG/RADIUS`) - 2026-10-23
+- [x] Coder's checks pass: backend 554 tests, 0 failures, 2 skipped (OS-dependent symlink/read-only) - 2026-10-23
+- [x] Tester review: 55 tests added, backend 608 (0 failures, 3 skipped); no functional bugs; 1 low plan-order deviation (429 after 415, disabled `knownBug_` test); all 11 coder deviations judged acceptable - 2026-10-23
+- [x] Security audit: 0 Critical/High, 2 Medium, 6 Low, 7 Info (`securityAudit-report/stage-2-time-entry.md`) - 2026-10-23
+- [x] Audit fixes agreed: fix M-1, L-1, L-2, L-3, L-5 now (after tester); L-4 → Stage 4 admin review; L-6 → Stage 5 - 2026-10-23
+- [x] **Note (M-2):** user chose to keep local JDK 25.0.1 for now (about 4 security updates behind). Must update the JDK and pin a patched version for production — tracked in Stage 5 - 2026-10-23
+- [x] Audit fixes applied: M-1 (header pre-check, 2560 px / 6 MP, decode semaphore → 503 `SERVER_BUSY`), L-1 (lazy multipart + rate-limit filter before parsing; 429 before 415), L-2 (private multipart temp dir), L-3 (real PostgreSQL `lock_timeout` → 503), L-5 (absolute storage root + static-location guard). Backend 626 tests, 0 failures, 2 skipped - 2026-10-26
+- [x] Independent re-run of the full suite: 626 run, 0 failures, 0 errors, 2 skipped - 2026-10-26
+- [x] End-to-end check on the user's running server (V3 auto-migrated): consent 403, `PHOTO_REQUIRED` EN/ES, fake photo `INVALID_PHOTO`, 3.5 MB → 413 on real Tomcat, VALID clock-in, replay with/without photo → same entry, `ALREADY_CLOCKED_IN`, today states, photo download headers + no metadata, other employee 404, admin route 200/403, outside-geofence clock-out → PENDING_REVIEW, no temp leftovers, `uploads/` ignored by git - 2026-10-26
+- [x] Committed and pushed to `stage1-2` - 2026-10-26
 
 ## Stage 3 - Employee PWA
 
@@ -124,6 +135,9 @@ Branch: `stage1-2`. Inventory: [naming-inventory.md](naming-inventory.md)
 - [ ] Full OWASP security audit
 - [ ] Stage 1 audit M-2: rate-limit by empresa+empleado and IP network block (/64 IPv6); trust `X-Forwarded-For` only from Caddy
 - [ ] Stage 1 audit M-3: replace hard 15-min lock with growing delays (1 s → ~1 min) + admin alert
+- [ ] Stage 2 audit M-2: update JDK 25 (local is 25.0.1, kept by user decision 2026-10-23) and pin a patched JDK for production
+- [ ] Stage 2 audit L-6: log and rate-limit photo access
+- [ ] Spring Boot 3.5 → 4.x migration (3.5 OSS support ended 2026-06-30)
 - [ ] Photo retention job
 - [ ] VPS deploy: native PostgreSQL + Caddy HTTPS
 - [ ] Backups (database + uploads)

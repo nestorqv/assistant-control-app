@@ -108,6 +108,32 @@ It creates company `DEMO` ("Empresa Demo") with branch "Sucursal Centro", employ
 - More than 20 login attempts per 5 minutes from one IP return 429.
 - Other endpoints: `GET /api/me`, `POST /api/me/consent`, and `GET /api/admin/employees[/{id}]` (admin only). Roles are `EMPLOYEE` and `ADMIN`. Send `Authorization: Bearer <token>`.
 
+### Check-in API
+
+Stage 2. All endpoints need `Authorization: Bearer <token>`; the server clock and the company time zone decide the time and the work date, never the phone.
+
+- `GET /api/time`: server time and company zone.
+- `GET /api/time-entries/today`: state of the single clock button (`nextAction` `CLOCK_IN` / `CLOCK_OUT` / `NONE`, `blockedReason`, `workedMinutes`, schedule, branch).
+- `POST /api/time-entries` (`multipart/form-data`): fields `type` (`CLOCK_IN`/`CLOCK_OUT`), `clientUuid`, `deviceTime` (ISO instant), optional `lat`, `lng` (dot decimals, both or neither), `accuracy`, `deviceSentAt`, and the required `photo` (baseline JPEG or non-interlaced 8-bit PNG, max 2 MB, at most 2560 px per side and 6 MP). 201 when created, 200 for a replay of the same `clientUuid` (same employee and type; no photo needed on a replay).
+- `GET /api/time-entries/{id}/photo` (own photos) and `GET /api/admin/time-entries/{id}/photo` (admin, own company). Anything else is 404.
+
+```powershell
+curl.exe -s -X POST http://localhost:8080/api/time-entries -H "Authorization: Bearer $token" -F type=CLOCK_IN -F clientUuid=([guid]::NewGuid()) -F deviceTime=2026-10-22T13:58:00.000Z -F lat=9.9325 -F lng=-84.0796 -F accuracy=12 "-F photo=@selfie.jpg;type=image/jpeg"
+```
+
+Rules:
+
+- Status is `VALID` or `PENDING_REVIEW`. Review reasons: `NO_GPS`, `OUTSIDE_GEOFENCE`, `LOW_GPS_ACCURACY` (above 100 m), `SYNCED_LATE`, `DEVICE_CLOCK_AHEAD`, `SHIFT_TOO_LONG`.
+- One CLOCK_IN and one CLOCK_OUT per work date. A CLOCK_OUT closes the open CLOCK_IN (overnight shifts keep the start date). After 16 h the shift is "forgotten": a CLOCK_OUT is still accepted but flagged `SHIFT_TOO_LONG`, and a new day can be started.
+- Lateness is stored at CLOCK_IN: counted from the scheduled start once the grace is exceeded.
+- Consent (`POST /api/me/consent`) and a branch are required (403 `CONSENT_REQUIRED` / `NO_BRANCH_ASSIGNED`). The seeded admin `9001` has no branch.
+- 30 POSTs per employee per 10 minutes, then 429 (checked before the body is parsed). When the server is busy (too many photos decoding at once, or the employee row lock is held for more than 5 s) the answer is 503 `SERVER_BUSY` with `Retry-After`; the client should retry with the same `clientUuid`.
+- Photos are re-encoded to JPEG without EXIF and stored under `UPLOADS_DIR` (default `backend/uploads`, gitignored). Never commit uploads. The folder must not be inside `src/`, `static`, `public` or `webapp`: the backend refuses to start otherwise. Uploads are spooled to `<UPLOADS_DIR>/.upload-tmp` while a request is processed.
+- To test the geofence at your location, set `DEV_SEED_LAT`, `DEV_SEED_LNG` (dot decimals) and optionally `DEV_SEED_RADIUS` (10 to 5000) in `backend/.env`; they are applied on every dev start, also to an already-seeded branch.
+- New error codes: `CONSENT_REQUIRED`, `NO_BRANCH_ASSIGNED`, `ALREADY_CLOCKED_IN`, `NOT_CLOCKED_IN`, `SHIFT_ALREADY_COMPLETED`, `CLIENT_UUID_CONFLICT`, `PHOTO_REQUIRED`, `INVALID_PHOTO`, `PAYLOAD_TOO_LARGE`, `SERVER_BUSY`.
+
+The database migrates to V3 automatically on the next start; no reset is needed.
+
 ## Languages
 
 - The UI has a language switcher (Español / English) in the header. The choice is saved in the browser; the default is the browser language when it is Spanish or English, otherwise Spanish.

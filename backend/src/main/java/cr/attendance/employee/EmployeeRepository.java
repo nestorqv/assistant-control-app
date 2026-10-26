@@ -1,8 +1,10 @@
 package cr.attendance.employee;
 
+import jakarta.persistence.LockModeType;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.Repository;
@@ -14,6 +16,12 @@ public interface EmployeeRepository extends Repository<Employee, Long> {
     Employee save(Employee employee);
 
     Optional<Employee> findByIdAndCompanyId(Long id, Long companyId);
+
+    // Serializes every time-entry POST of one employee. Must be called inside a transaction.
+    // No lock.timeout hint: Hibernate's PostgreSQL dialect ignores it. TimeEntryWriter bounds the wait
+    // with SET LOCAL lock_timeout in the same transaction instead.
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    Optional<Employee> findWithLockByIdAndCompanyId(Long id, Long companyId);
 
     List<Employee> findAllByCompanyIdOrderByName(Long companyId);
 

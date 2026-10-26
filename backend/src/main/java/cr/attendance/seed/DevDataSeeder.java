@@ -11,6 +11,7 @@ import cr.attendance.company.CompanyRepository;
 import cr.attendance.company.Branch;
 import cr.attendance.company.BranchRepository;
 import java.time.LocalTime;
+import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
@@ -30,6 +31,13 @@ public class DevDataSeeder implements ApplicationRunner {
     static final String DEMO_COMPANY_CODE = "DEMO";
     static final String PIN_MESSAGE =
             "DEV_SEED_PIN is required for the dev profile: exactly 8 digits, not a sequence, repeated pattern or date";
+
+    static final String LOCATION_MESSAGE = "DEV_SEED_LAT and DEV_SEED_LNG must be set together, as decimal degrees "
+            + "(latitude -90..90, longitude -180..180); DEV_SEED_RADIUS must be between 10 and 5000";
+    private static final String BRANCH_NAME = "Sucursal Centro";
+    private static final double DEFAULT_LATITUDE = 9.9325;
+    private static final double DEFAULT_LONGITUDE = -84.0796;
+    private static final int DEFAULT_RADIUS = 100;
 
     private static final Logger log = LoggerFactory.getLogger(DevDataSeeder.class);
 
@@ -83,15 +91,20 @@ public class DevDataSeeder implements ApplicationRunner {
         if (!PinPolicy.isValid(pin)) {
             throw new IllegalStateException(PIN_MESSAGE);
         }
-        if (companyRepository.findByCode(DEMO_COMPANY_CODE).isPresent()) {
+        validateLocation();
+        Optional<Company> existing = companyRepository.findByCode(DEMO_COMPANY_CODE);
+        if (existing.isPresent()) {
+            updateBranchLocation(existing.get());
             log.info("Dev seed already present");
             return;
         }
 
         Company company = companyRepository.save(new Company(DEMO_COMPANY_CODE, "Empresa Demo"));
-        // Placeholder San José coordinates.
-        Branch branch = branchRepository.save(
-                new Branch(company.getId(), "Sucursal Centro", 9.9325, -84.0796, 100));
+        // San José coordinates unless DEV_SEED_LAT / DEV_SEED_LNG / DEV_SEED_RADIUS say otherwise.
+        Branch branch = branchRepository.save(new Branch(company.getId(), BRANCH_NAME,
+                props.branchLatitude() != null ? props.branchLatitude() : DEFAULT_LATITUDE,
+                props.branchLongitude() != null ? props.branchLongitude() : DEFAULT_LONGITUDE,
+                props.branchRadiusMeters() != null ? props.branchRadiusMeters() : DEFAULT_RADIUS));
         String pinHash = passwordEncoder.encode(pin);
 
         for (Demo demo : DEMO_EMPLOYEES) {
@@ -104,5 +117,33 @@ public class DevDataSeeder implements ApplicationRunner {
             }
         }
         log.info("Dev seed created: company DEMO, 7 employees (codes 1001-1006, 9001)");
+    }
+
+    private void validateLocation() {
+        Double lat = props.branchLatitude();
+        Double lng = props.branchLongitude();
+        Integer radius = props.branchRadiusMeters();
+        if ((lat == null) != (lng == null)
+                || (lat != null && (!Double.isFinite(lat) || !Double.isFinite(lng)
+                        || lat < -90 || lat > 90 || lng < -180 || lng > 180))
+                || (radius != null && (radius < 10 || radius > 5000))) {
+            throw new IllegalStateException(LOCATION_MESSAGE);
+        }
+    }
+
+    // The dev database is usually seeded already, so the env vars must also move the existing branch.
+    private void updateBranchLocation(Company company) {
+        if (props.branchLatitude() == null && props.branchRadiusMeters() == null) {
+            return;
+        }
+        for (Branch branch : branchRepository.findAllByCompanyIdOrderByName(company.getId())) {
+            if (BRANCH_NAME.equals(branch.getName())) {
+                branchRepository.updateLocation(branch.getId(), company.getId(),
+                        props.branchLatitude() != null ? props.branchLatitude() : branch.getLatitude(),
+                        props.branchLongitude() != null ? props.branchLongitude() : branch.getLongitude(),
+                        props.branchRadiusMeters() != null ? props.branchRadiusMeters() : branch.getRadiusMeters());
+                log.info("Dev seed: branch location updated");
+            }
+        }
     }
 }

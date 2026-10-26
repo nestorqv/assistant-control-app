@@ -6,3 +6,8 @@ app:
     bcrypt-strength: 4
     login-rate-limit:
       max-attempts: 100000
+  storage:
+    root: target/test-uploads
+  time-entry:
+    rate-limit:
+      max-attempts: 100000

@@ -1,5 +1,7 @@
 package cr.attendance.auth;
 
+import cr.attendance.common.InvalidCredentialsException;
+
 import cr.attendance.employee.Employee;
 import cr.attendance.employee.EmployeeRepository;
 import cr.attendance.company.Company;

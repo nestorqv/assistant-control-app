@@ -4,6 +4,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
@@ -102,10 +104,34 @@ public class TestData {
     }
 
     public long timeEntry(long companyId, long employeeId, long branchId) {
+        return timeEntry(companyId, employeeId, branchId, "CLOCK_IN", LocalDate.now());
+    }
+
+    public long timeEntry(long companyId, long employeeId, long branchId, String type, LocalDate workDate) {
         return jdbc.queryForObject("""
-                insert into time_entry (company_id, employee_id, branch_id, type, source, client_uuid)
-                values (?, ?, ?, 'CLOCK_IN', 'MOBILE', ?) returning id
-                """, Long.class, companyId, employeeId, branchId, UUID.randomUUID());
+                insert into time_entry (company_id, employee_id, branch_id, type, source, client_uuid, work_date)
+                values (?, ?, ?, ?, 'MOBILE', ?, ?) returning id
+                """, Long.class, companyId, employeeId, branchId, type, UUID.randomUUID(), workDate);
+    }
+
+    /** Accepts the photo/location notice, as POST /api/me/consent does. */
+    public void consent(long employeeId) {
+        jdbc.update("update employee set consent_at = now() where id = ?", employeeId);
+    }
+
+    public void schedule(long companyId, long employeeId, int isoDay, LocalTime start, LocalTime end, int grace) {
+        jdbc.update("""
+                insert into work_schedule (company_id, employee_id, day_of_week, start_time, end_time, grace_minutes)
+                values (?, ?, ?, ?, ?, ?)
+                """, companyId, employeeId, isoDay, start, end, grace);
+    }
+
+    /** A branch at the given position (the default test branch is at 9.9325, -84.0796). */
+    public long branchAt(long companyId, double lat, double lng, int radiusMeters) {
+        return jdbc.queryForObject("""
+                insert into branch (company_id, name, latitude, longitude, radius_meters)
+                values (?, ?, ?, ?, ?) returning id
+                """, Long.class, companyId, "Sucursal " + UUID.randomUUID(), lat, lng, radiusMeters);
     }
 
     /** Logs in through the real endpoint and returns the bearer token. */

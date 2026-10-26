@@ -26,6 +26,12 @@ spring:
   mvc:
     problemdetails:
       enabled: true
+  servlet:
+    multipart:
+      max-file-size: 3MB        # hard ceiling; the app rejects > 2MB first with a localized 413
+      max-request-size: 4MB
+      file-size-threshold: 256KB
+      resolve-lazily: true      # parse only when the handler binds the form (after auth and the rate limit)
 
 app:
   jwt:
@@ -43,9 +49,30 @@ app:
     login-rate-limit:
       max-attempts: 20
       window: 5m
+  storage:
+    root: ${UPLOADS_DIR:uploads}   # relative to backend/; outside the web root
+    max-photo-bytes: 2MB
+    max-input-dimension: 2560   # the PWA sends ~1024 px; larger is refused from the header
+    max-input-pixels: 6000000
+    output-max-dimension: 1280
+    jpeg-quality: 0.85
+    max-concurrent-decodes: 3   # process-wide; more simultaneous uploads wait, then get 503 SERVER_BUSY
+    decode-acquire-timeout: 2s
+    # temp-dir: defaults to <root>/.upload-tmp (multipart spool, private, emptied at start)
+  time-entry:
+    max-shift-duration: 16h
+    clock-skew-tolerance: 2m
+    lock-timeout: 5s            # how long a POST waits for the employee row lock (PostgreSQL lock_timeout)
+    max-gps-accuracy-meters: 100
+    rate-limit:
+      max-attempts: 30
+      window: 10m
 
 server:
   port: 8080
+  tomcat:
+    max-part-count: 10          # Boot default is 50; the form has 7 parts
+    max-swallow-size: 5MB       # > max-request-size so oversize gets a readable 413, not a reset
   error:
     include-stacktrace: never
 

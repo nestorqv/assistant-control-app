@@ -1,5 +1,7 @@
 package cr.attendance.auth;
 
+import cr.attendance.common.InvalidPinException;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 

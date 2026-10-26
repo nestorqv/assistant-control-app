@@ -2,6 +2,9 @@ package cr.attendance.config;
 
 import cr.attendance.auth.EmployeeJwtAuthenticationConverter;
 import cr.attendance.auth.LoginAwareBearerTokenResolver;
+import cr.attendance.common.FixedWindowRateLimiter;
+import cr.attendance.timeentry.TimeEntryRateLimitFilter;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -13,15 +16,20 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
+import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
+import org.springframework.web.servlet.HandlerExceptionResolver;
+import org.springframework.web.servlet.LocaleResolver;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http, EmployeeJwtAuthenticationConverter converter)
-            throws Exception {
+    SecurityFilterChain securityFilterChain(HttpSecurity http, EmployeeJwtAuthenticationConverter converter,
+            FixedWindowRateLimiter timeEntryRateLimiter,
+            @Qualifier("handlerExceptionResolver") HandlerExceptionResolver handlerExceptionResolver,
+            LocaleResolver localeResolver) throws Exception {
         // Plain 401 (no WWW-Authenticate) and plain 403 (empty body), same as Stage 0.
         AuthenticationEntryPoint entryPoint = new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED);
         AccessDeniedHandler deniedHandler = (req, res, e) -> res.setStatus(HttpStatus.FORBIDDEN.value());
@@ -44,6 +52,9 @@ public class SecurityConfig {
                         .authenticationEntryPoint(entryPoint)
                         .accessDeniedHandler(deniedHandler)
                         .jwt(j -> j.jwtAuthenticationConverter(converter)))
+                // After the bearer token is authenticated, before authorization and the dispatcher.
+                .addFilterAfter(new TimeEntryRateLimitFilter(timeEntryRateLimiter, handlerExceptionResolver,
+                        localeResolver), BearerTokenAuthenticationFilter.class)
                 .exceptionHandling(e -> e
                         .authenticationEntryPoint(entryPoint)
                         .accessDeniedHandler(deniedHandler));

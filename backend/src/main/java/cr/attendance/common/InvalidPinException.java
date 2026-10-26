@@ -1,4 +1,4 @@
-package cr.attendance.auth;
+package cr.attendance.common;
 
 /** Thrown when a PIN breaks PinPolicy. The message never contains the PIN. */
 public class InvalidPinException extends IllegalArgumentException {

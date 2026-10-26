@@ -1,4 +1,4 @@
-package cr.attendance.auth;
+package cr.attendance.common;
 
 public class InvalidCredentialsException extends RuntimeException {
 

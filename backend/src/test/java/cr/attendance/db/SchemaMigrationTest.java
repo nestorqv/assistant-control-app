@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import cr.attendance.support.IntegrationTest;
 import cr.attendance.support.TestData;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -26,7 +27,7 @@ class SchemaMigrationTest {
         List<String> versions = jdbc.queryForList(
                 "select version from flyway_schema_history where success and version is not null order by installed_rank",
                 String.class);
-        assertThat(versions).contains("1", "2");
+        assertThat(versions).contains("1", "2", "3");
     }
 
     @Test
@@ -86,8 +87,8 @@ class SchemaMigrationTest {
         long employeeId = data.employee(t.companyId(), t.branchId(), "EMPLOYEE");
 
         String timeEntrySql = """
-                insert into time_entry (company_id, employee_id, branch_id, type, source, status, client_uuid)
-                values (?, ?, ?, 'CLOCK_IN', ?, ?, ?)
+                insert into time_entry (company_id, employee_id, branch_id, type, source, status, client_uuid, work_date)
+                values (?, ?, ?, 'CLOCK_IN', ?, ?, ?, current_date)
                 """;
         assertThatThrownBy(() -> jdbc.update(timeEntrySql, t.companyId(), employeeId, t.branchId(),
                 "FAX", "VALID", UUID.randomUUID())).isInstanceOf(DataIntegrityViolationException.class);
@@ -110,17 +111,19 @@ class SchemaMigrationTest {
         long employeeId = data.employee(t.companyId(), t.branchId(), "EMPLOYEE");
         UUID uuid = UUID.randomUUID();
         String sql = """
-                insert into time_entry (company_id, employee_id, branch_id, type, source, client_uuid)
-                values (?, ?, ?, 'CLOCK_IN', 'MOBILE', ?)
+                insert into time_entry (company_id, employee_id, branch_id, type, source, client_uuid, work_date)
+                values (?, ?, ?, 'CLOCK_IN', 'MOBILE', ?, ?)
                 """;
-        jdbc.update(sql, t.companyId(), employeeId, t.branchId(), uuid);
-        assertThatThrownBy(() -> jdbc.update(sql, t.companyId(), employeeId, t.branchId(), uuid))
+        jdbc.update(sql, t.companyId(), employeeId, t.branchId(), uuid, LocalDate.now());
+        // A different work_date, so only the client_uuid key can reject the second insert.
+        assertThatThrownBy(() -> jdbc.update(sql, t.companyId(), employeeId, t.branchId(), uuid,
+                LocalDate.now().minusDays(1)))
                 .isInstanceOf(DataIntegrityViolationException.class);
 
         // The same uuid in another company is a different tenant's key, so it is allowed.
         TestData.Tenant other = data.tenant();
         long otherEmployee = data.employee(other.companyId(), other.branchId(), "EMPLOYEE");
-        jdbc.update(sql, other.companyId(), otherEmployee, other.branchId(), uuid);
+        jdbc.update(sql, other.companyId(), otherEmployee, other.branchId(), uuid, LocalDate.now());
     }
 
     @Test

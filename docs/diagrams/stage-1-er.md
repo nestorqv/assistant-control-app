@@ -1,5 +1,7 @@
 # Stage 1 - Data model and authentication diagrams
 
+> Stage 2 changes: see `stage-2-time-entry.md`.
+
 Source of truth: `docs/plans/stage-1-data-model-auth.md` (open questions resolved 2026-10-21). The Stage 1 code is implemented; the ER section matches the final migration (amendments 3, 4 and 5 applied). Existing Stage 0 code was checked for the base: `config/SecurityConfig`, `config/TimeConfig` (UTC `Clock` bean), `health/*`, Flyway `V1__baseline.sql` (empty baseline). Refresh these diagrams after the coder finishes.
 
 > Renamed per stage-1b (2026-10-22): tables, columns, classes, error codes and claims below use the English names. Mapping: `docs/naming-inventory.md`.

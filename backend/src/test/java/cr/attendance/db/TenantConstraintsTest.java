@@ -45,8 +45,8 @@ class TenantConstraintsTest {
         long employeeA = data.employee(a.companyId(), a.branchId(), "EMPLOYEE");
         long employeeB = data.employee(b.companyId(), b.branchId(), "EMPLOYEE");
         String sql = """
-                insert into time_entry (company_id, employee_id, branch_id, type, source, client_uuid)
-                values (?, ?, ?, 'CLOCK_IN', 'MOBILE', ?)
+                insert into time_entry (company_id, employee_id, branch_id, type, source, client_uuid, work_date)
+                values (?, ?, ?, 'CLOCK_IN', 'MOBILE', ?, current_date)
                 """;
         assertThatThrownBy(() -> jdbc.update(sql, a.companyId(), employeeB, a.branchId(), UUID.randomUUID()))
                 .isInstanceOf(DataIntegrityViolationException.class);

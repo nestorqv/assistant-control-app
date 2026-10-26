@@ -1,4 +1,4 @@
-package cr.attendance.auth;
+package cr.attendance.common;
 
 import java.time.Duration;
 

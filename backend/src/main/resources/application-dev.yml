@@ -1,6 +1,9 @@
 app:
   seed:
     pin: ${DEV_SEED_PIN:}
+    branch-latitude: ${DEV_SEED_LAT:}
+    branch-longitude: ${DEV_SEED_LNG:}
+    branch-radius-meters: ${DEV_SEED_RADIUS:}
 
 logging:
   level:

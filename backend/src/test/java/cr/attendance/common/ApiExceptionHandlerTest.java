@@ -2,13 +2,14 @@ package cr.attendance.common;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import cr.attendance.auth.InvalidPinException;
-import cr.attendance.auth.TooManyAttemptsException;
+
+
 import cr.attendance.support.TestMessages;
 import java.time.Duration;
 import java.util.List;
 import java.util.Locale;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.context.MessageSource;
@@ -28,6 +29,8 @@ import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.MultipartException;
 
 /**
  * Every exception becomes a fixed ProblemDetail with an English code, localized title/detail and no
@@ -136,5 +139,55 @@ class ApiExceptionHandlerTest {
     void notFound(String lang) {
         LocaleContextHolder.setLocale(Locale.of(lang));
         check(handler.notFound(), HttpStatus.NOT_FOUND, ErrorCode.NOT_FOUND, lang);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"es", "en"})
+    void maxUploadSizeExceededIsPayloadTooLarge(String lang) throws Exception {
+        handle(new MaxUploadSizeExceededException(3 * 1024 * 1024), HttpStatus.PAYLOAD_TOO_LARGE,
+                ErrorCode.PAYLOAD_TOO_LARGE, lang);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"es", "en"})
+    void malformedMultipartIsInvalidRequest(String lang) {
+        LocaleContextHolder.setLocale(Locale.of(lang));
+        check(handler.malformedMultipart(), HttpStatus.BAD_REQUEST, ErrorCode.INVALID_REQUEST, lang);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"es", "en"})
+    void unexpectedExceptionIsAFixedInternalError(String lang) {
+        LocaleContextHolder.setLocale(Locale.of(lang));
+        check(handler.unexpected(new IllegalStateException(SECRET_VALUE)), HttpStatus.INTERNAL_SERVER_ERROR,
+                ErrorCode.INTERNAL_ERROR, lang);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"es", "en"})
+    void everyApiExceptionCodeKeepsItsStatusAndLocalizedTexts(String lang) {
+        LocaleContextHolder.setLocale(Locale.of(lang));
+        Object[][] cases = {
+            {HttpStatus.FORBIDDEN, ErrorCode.CONSENT_REQUIRED},
+            {HttpStatus.FORBIDDEN, ErrorCode.NO_BRANCH_ASSIGNED},
+            {HttpStatus.CONFLICT, ErrorCode.ALREADY_CLOCKED_IN},
+            {HttpStatus.CONFLICT, ErrorCode.NOT_CLOCKED_IN},
+            {HttpStatus.CONFLICT, ErrorCode.SHIFT_ALREADY_COMPLETED},
+            {HttpStatus.CONFLICT, ErrorCode.CLIENT_UUID_CONFLICT},
+            {HttpStatus.BAD_REQUEST, ErrorCode.PHOTO_REQUIRED},
+            {HttpStatus.BAD_REQUEST, ErrorCode.INVALID_PHOTO},
+            {HttpStatus.PAYLOAD_TOO_LARGE, ErrorCode.PAYLOAD_TOO_LARGE},
+            {HttpStatus.INTERNAL_SERVER_ERROR, ErrorCode.INTERNAL_ERROR},
+        };
+        for (Object[] c : cases) {
+            ProblemDetail p = check(handler.apiException(new ApiException((HttpStatus) c[0], (ErrorCode) c[1])),
+                    (HttpStatus) c[0], (ErrorCode) c[1], lang);
+            assertThat(p.getInstance().toString()).isEqualTo("urn:attendance:error");
+        }
+    }
+
+    @Test
+    void multipartExceptionIsNotAnApiExceptionSubtypeOfTheSizeLimitOne() {
+        assertThat(MultipartException.class).isAssignableFrom(MaxUploadSizeExceededException.class);
     }
 }

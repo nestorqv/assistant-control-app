@@ -1,6 +1,33 @@
 # Changelog
 
+## [2026-10-23]
+
+### Fixed
+
+- Stage 2 audit M-1 (`securityAudit-report/stage-2-time-entry.md`): photo decoding is bounded. Header-only pre-check refuses 16-bit and interlaced PNG and progressive JPEG (the PWA sends baseline JPEG); limits lowered to 2560 px per side and 6 MP (`app.storage.max-input-dimension`, `max-input-pixels`); a process-wide decode semaphore (`max-concurrent-decodes`, default 3) returns 503 `SERVER_BUSY` (EN/ES, `Retry-After`) when saturated.
+- Audit L-1: `spring.servlet.multipart.resolve-lazily: true`, and the per-employee POST rate limiter moved from an interceptor to a filter in the Spring Security chain, so 429 comes before 415/400 and before multipart parsing.
+- Audit L-2: multipart uploads are spooled to a private temp directory (`<storage root>/.upload-tmp` or `app.storage.temp-dir`), emptied at startup. The photo file is deleted only on rollback; an unknown commit outcome keeps it. The orphan-file sweeper stays in Stage 5.
+- Audit L-3: the employee row-lock wait is really bounded on PostgreSQL (`lock_timeout` set per transaction from `app.time-entry.lock-timeout`, default 5s); a timeout returns 503 `SERVER_BUSY`.
+- Audit L-5: the storage root is resolved to an absolute normalized path at startup, and startup fails if it is inside a static-resource location (`src/main/resources`, `webapp`, `static`, `public`, `META-INF/resources`, `target/classes`, configured `file:` locations).
+- Deferred: M-2 (JDK update, user decision, Stage 5), L-4 (Stage 4), L-6 (Stage 5).
+
 ## [2026-10-22]
+
+### Added
+
+- Stage 2 check-in API (`docs/plans/stage-2-time-entry-api.md`): `GET /api/time`, `GET /api/time-entries/today`, `POST /api/time-entries` (multipart; 201 created, 200 idempotent replay), `GET /api/time-entries/{id}/photo` (own photos) and `GET /api/admin/time-entries/{id}/photo` (admin, own company; other tenants get 404).
+- Stage 2 rules: company-local `work_date` (overnight shifts inherit the CLOCK_IN date), 16 h shift window (`SHIFT_TOO_LONG` review instead of rejection; a forgotten earlier day never blocks today), Haversine geofence, `deviceSentAt`-based late-sync and clock-skew review reasons, GPS accuracy, lateness stored at CLOCK_IN, mandatory selfie (`PHOTO_REQUIRED`), consent and branch checks, per-employee row lock, and a per-employee POST rate limit that runs before validation.
+- Stage 2 photos: new `storage` package (`StorageService`, `LocalDiskStorageService`, `PhotoProcessor`): magic-byte check (JPEG/PNG), 2 MB cap, dimension guard, server-side re-encode to JPEG without EXIF, keys `{companyId}/{yyyy-MM}/{uuid}.jpg` under `UPLOADS_DIR` (default `backend/uploads`), path-traversal and symlink guards, file deleted on rollback.
+- Stage 2 schema: Flyway `V3__time_entry_checkin.sql` (`work_date`, `skew_seconds`, `late_minutes`, `gps_accuracy_meters`, `review_reasons`, unique `(employee_id, work_date, type)`, evidence constraints; 45 constraints and 7 `ix_*` indexes in total).
+- Stage 2 errors (EN/ES): `CONSENT_REQUIRED`, `NO_BRANCH_ASSIGNED`, `ALREADY_CLOCKED_IN`, `NOT_CLOCKED_IN`, `SHIFT_ALREADY_COMPLETED`, `CLIENT_UUID_CONFLICT`, `PHOTO_REQUIRED`, `INVALID_PHOTO`, `PAYLOAD_TOO_LARGE`; malformed multipart gives 400 `INVALID_REQUEST`; unexpected errors give a fixed 500 `INTERNAL_ERROR` body.
+- Stage 2 dev seed: optional `DEV_SEED_LAT`, `DEV_SEED_LNG`, `DEV_SEED_RADIUS` (also update an already-seeded branch). `.env.example` has `UPLOADS_DIR` and these keys, empty.
+- Stage 2 tests: pure rules, storage, photo processing, and MockMvc integration tests with a shared mutable clock.
+
+### Changed
+
+- Stage 2: `TooManyAttemptsException`, `InvalidCredentialsException` and `InvalidPinException` moved from `auth` to `common`, so `common` no longer depends on feature packages (guarded by `CommonPackageDependencyTest`).
+- Stage 2: `TimeEntry` gained the V3 columns and a constructor with `workDate`; `SeedProperties` gained the optional branch location; `TestData` helpers and the schema tests were updated for `work_date` and the new constraint counts.
+- Stage 2: multipart limits (`max-file-size` 3MB, `max-request-size` 4MB), Tomcat `max-part-count` 10 and `max-swallow-size` 5MB.
 
 ### Changed
 

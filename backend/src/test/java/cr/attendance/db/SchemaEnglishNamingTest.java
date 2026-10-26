@@ -14,7 +14,9 @@ import cr.attendance.timeentry.TimeEntrySource;
 import cr.attendance.timeentry.TimeEntryStatus;
 import cr.attendance.timeentry.TimeEntryType;
 import java.util.List;
+import java.time.LocalDate;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -39,13 +41,18 @@ class SchemaEnglishNamingTest {
             "uq_time_entry_company_client_uuid", "uq_time_entry_id_company", "ck_time_entry_type",
             "ck_time_entry_source", "ck_time_entry_status", "ck_time_entry_latitude", "ck_time_entry_longitude",
             "ck_time_entry_distance",
-            "fk_evidence_time_entry_company", "ck_evidence_type",
+            "ck_time_entry_location_pair", "ck_time_entry_late_minutes", "ck_time_entry_gps_accuracy",
+            "ck_time_entry_review_reasons",
+            "fk_evidence_time_entry_company", "ck_evidence_type", "uq_evidence_time_entry_type",
+            "ck_evidence_storage_key_type", "ck_evidence_storage_key_format", "ck_evidence_storage_key_company",
             "fk_adjustment_time_entry_company", "fk_adjustment_admin_company", "ck_adjustment_reason");
 
     private static final List<String> EXPECTED_INDEXES = List.of(
             "ix_employee_company_active", "ix_time_entry_company_server_time",
             "ix_time_entry_employee_server_time", "ix_time_entry_pending_review", "ix_evidence_time_entry",
-            "ix_adjustment_time_entry");
+            "ix_adjustment_time_entry", "ix_time_entry_company_work_date");
+
+    private final AtomicInteger dayCounter = new AtomicInteger();
 
     @Autowired
     private JdbcTemplate jdbc;
@@ -63,7 +70,7 @@ class SchemaEnglishNamingTest {
     private EvidenceRepository evidences;
 
     @Test
-    void constraintNamesAreExactlyTheThirtySevenEnglishOnes() {
+    void constraintNamesAreExactlyTheFortyFiveEnglishOnes() {
         List<String> names = jdbc.queryForList("""
                 select c.conname from pg_constraint c
                   join pg_class t on t.oid = c.conrelid
@@ -71,11 +78,11 @@ class SchemaEnglishNamingTest {
                  where n.nspname = 'public' and c.contype in ('u', 'c', 'f')
                    and t.relname <> 'flyway_schema_history'
                 """, String.class);
-        assertThat(names).hasSize(37).containsExactlyInAnyOrderElementsOf(EXPECTED_CONSTRAINTS);
+        assertThat(names).hasSize(45).containsExactlyInAnyOrderElementsOf(EXPECTED_CONSTRAINTS);
     }
 
     @Test
-    void indexNamesAreTheSixEnglishOnesAndThePartialIndexTargetsPendingReview() {
+    void indexNamesAreTheSevenEnglishOnesAndThePartialIndexTargetsPendingReview() {
         List<String> names = jdbc.queryForList(
                 "select indexname from pg_indexes where schemaname = 'public' and indexname like 'ix\\_%'",
                 String.class);
@@ -169,9 +176,11 @@ class SchemaEnglishNamingTest {
         }
         long timeEntryId = insertTimeEntry(t, employeeId, "CLOCK_OUT", "QR", "PENDING_REVIEW");
         for (EvidenceType type : EvidenceType.values()) {
+            // Only PHOTO may carry a key, and it must have the {companyId}/{yyyy-MM}/{uuid}.jpg shape.
+            String key = type == EvidenceType.PHOTO ? t.companyId() + "/2026-10/" + UUID.randomUUID() + ".jpg" : null;
             long id = jdbc.queryForObject("""
-                    insert into evidence (company_id, time_entry_id, type) values (?, ?, ?) returning id
-                    """, Long.class, t.companyId(), timeEntryId, type.name());
+                    insert into evidence (company_id, time_entry_id, type, storage_key) values (?, ?, ?, ?) returning id
+                    """, Long.class, t.companyId(), timeEntryId, type.name(), key);
             assertThat(evidences.findByIdAndCompanyId(id, t.companyId()).orElseThrow().getType()).isEqualTo(type);
         }
     }
@@ -221,9 +230,11 @@ class SchemaEnglishNamingTest {
 
     private long insertTimeEntry(TestData.Tenant t, long employeeId, String type, String source, String status) {
         return jdbc.queryForObject("""
-                insert into time_entry (company_id, employee_id, branch_id, type, source, status, client_uuid)
-                values (?, ?, ?, ?, ?, ?, ?) returning id
-                """, Long.class, t.companyId(), employeeId, t.branchId(), type, source, status, UUID.randomUUID());
+                insert into time_entry (company_id, employee_id, branch_id, type, source, status, client_uuid, work_date)
+                values (?, ?, ?, ?, ?, ?, ?, ?) returning id
+                """, Long.class, t.companyId(), employeeId, t.branchId(), type, source, status, UUID.randomUUID(),
+                // A distinct day per row: one CLOCK_IN/CLOCK_OUT per employee per work_date is unique.
+                LocalDate.now().minusDays(dayCounter.incrementAndGet()));
     }
 
     private void insertEvidence(long timeEntryId, String type) {
