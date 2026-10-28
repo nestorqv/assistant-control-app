@@ -1,57 +1,53 @@
-import { screen, waitFor } from '@testing-library/react'
+import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { expect, test, vi } from 'vitest'
-import App from './App'
 import { initLanguage, STORAGE_KEY } from './i18n/language'
-import { renderWithI18n } from './test/renderWithI18n'
+import { jsonResponse, today } from './test/fixtures'
+import { renderApp, seedSession, stubFetch } from './test/appHarness'
 
-const json = { 'content-type': 'application/json' }
 const health = { status: 'UP', service: 'attendance-backend', serverTime: '2026-10-13T18:00:00Z' }
 
-test('switching language in the app re-translates the page, the health status and the document', async () => {
-  vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify(health), { headers: json })))
+test('switching language re-translates the page, the health status and the document', async () => {
+  stubFetch((url) => (url === '/api/health' ? jsonResponse(health) : undefined))
   const user = userEvent.setup()
-  renderWithI18n(<App />, { route: '/' })
+  renderApp('/admin')
   await screen.findByText(/Servidor en línea/)
 
   await user.click(screen.getByRole('button', { name: 'English' }))
 
-  expect(screen.getByRole('heading', { name: 'Attendance Control' })).toBeDefined()
-  expect(screen.getByText('Employee screen (under construction)')).toBeDefined()
-  expect(screen.getByRole('link', { name: 'Go to the admin panel' })).toBeDefined()
+  expect(screen.getByRole('heading', { name: 'Admin panel' })).toBeDefined()
   expect(screen.getByRole('status').textContent).toMatch(/Server online \(UP\) - 10\/13\/2026, 12:00/)
   expect(document.documentElement.lang).toBe('en')
   expect(document.title).toBe('Attendance Control')
 })
 
-test('an error shown by the health status is re-translated on a language switch', async () => {
-  vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('boom', { status: 503 })))
+test('the main screen re-translates on a language switch', async () => {
+  await seedSession()
+  stubFetch((url) => (url === '/api/time-entries/today' ? jsonResponse(today()) : undefined))
   const user = userEvent.setup()
-  renderWithI18n(<App />, { route: '/admin' })
+  renderApp('/')
+  await screen.findByText('Aún no has marcado hoy')
+
+  await user.click(screen.getByRole('button', { name: 'English' }))
+
+  expect(screen.getByRole('heading', { name: 'Hello, María' })).toBeDefined()
+  expect(screen.getByText("You haven't clocked in today")).toBeDefined()
+  expect(screen.getByRole('button', { name: 'Clock in' })).toBeDefined()
+})
+
+test('an error shown by the health status is re-translated on a language switch', async () => {
+  stubFetch(() => new Response('boom', { status: 503 }))
+  const user = userEvent.setup()
+  renderApp('/admin')
   await screen.findByText('No se pudo contactar al servidor: HTTP 503')
   await user.click(screen.getByRole('button', { name: 'English' }))
   expect(screen.getByRole('status').textContent).toBe('Could not reach the server: HTTP 503')
 })
 
-test('requests made after an in-app switch carry the new Accept-Language', async () => {
-  const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify(health), { headers: json }))
-  vi.stubGlobal('fetch', fetchMock)
-  const user = userEvent.setup()
-  renderWithI18n(<App />, { route: '/' })
-  await screen.findByText(/Servidor en línea/)
-  expect(new Headers(fetchMock.mock.calls[0][1].headers).get('Accept-Language')).toBe('es')
-
-  await user.click(screen.getByRole('button', { name: 'English' }))
-  // Navigating to another page mounts a new HealthStatus, which fetches again.
-  await user.click(screen.getByRole('link', { name: 'Go to the admin panel' }))
-  await waitFor(() => expect(fetchMock.mock.calls.length).toBe(2))
-  expect(new Headers(fetchMock.mock.calls[1][1].headers).get('Accept-Language')).toBe('en')
-})
-
 test('the choice survives a reload (stored value wins on the next initLanguage)', async () => {
-  vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')))
+  stubFetch()
   const user = userEvent.setup()
-  const first = renderWithI18n(<App />, { route: '/' })
+  const first = renderApp('/login')
   await user.click(screen.getByRole('button', { name: 'English' }))
   first.unmount()
 
@@ -62,21 +58,21 @@ test('the choice survives a reload (stored value wins on the next initLanguage)'
 })
 
 test('switching still works when localStorage throws on write', async () => {
-  vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')))
+  stubFetch()
   vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
     throw new DOMException('quota', 'QuotaExceededError')
   })
   const user = userEvent.setup()
-  renderWithI18n(<App />, { route: '/' })
+  renderApp('/login')
   await user.click(screen.getByRole('button', { name: 'English' }))
-  expect(screen.getByRole('heading', { name: 'Attendance Control' })).toBeDefined()
+  expect(screen.getByRole('heading', { name: 'Sign in' })).toBeDefined()
   expect(screen.getByRole('button', { name: 'English' }).getAttribute('aria-pressed')).toBe('true')
 })
 
 test('pressing the already active language changes and announces nothing', async () => {
-  vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')))
+  stubFetch()
   const user = userEvent.setup()
-  const { container } = renderWithI18n(<App />, { route: '/' })
+  const { container } = renderApp('/login')
   await user.click(screen.getByRole('button', { name: 'Español' }))
   expect(container.querySelector('.language-switcher [aria-live="polite"]')?.textContent).toBe('')
   expect(localStorage.getItem(STORAGE_KEY)).toBeNull()

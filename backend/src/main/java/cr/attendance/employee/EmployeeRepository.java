@@ -65,4 +65,13 @@ public interface EmployeeRepository extends Repository<Employee, Long> {
             """)
     int recordConsent(@Param("id") Long id, @Param("companyId") Long companyId,
             @Param("consentAt") Instant consentAt);
+
+    // Logout: invalidates every token issued so far for this employee (the "ver" claim no longer matches).
+    @Transactional
+    @Modifying
+    @Query("""
+            update Employee e set e.tokenVersion = e.tokenVersion + 1
+             where e.id = :id and e.companyId = :companyId
+            """)
+    int incrementTokenVersion(@Param("id") Long id, @Param("companyId") Long companyId);
 }

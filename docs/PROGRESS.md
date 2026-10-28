@@ -12,7 +12,7 @@ Roadmap: [plans/00-roadmap.md](plans/00-roadmap.md)
 | 1 - Data model + auth | Done | 2026-10-21 | 2026-10-22 |
 | 1b - English naming + EN/ES | Done | 2026-10-22 | 2026-10-22 |
 | 2 - Check-in API | Done | 2026-10-22 | 2026-10-26 |
-| 3 - Employee PWA | Not started | | |
+| 3 - Employee PWA | Done (real-phone check deferred) | 2026-10-26 | 2026-10-28 |
 | 4 - Admin panel | Not started | | |
 | 5 - Hardening + deploy | Not started | | |
 
@@ -107,16 +107,27 @@ Branch: `stage1-2`. Inventory: [naming-inventory.md](naming-inventory.md)
 
 ## Stage 3 - Employee PWA
 
-- [ ] Stage plan written + open questions answered
-- [ ] UI design (designer)
-- [ ] Login screen with PIN keypad
-- [ ] Consent screen (Ley 8968)
-- [ ] Main screen, 3 states (antes de marcar / en turno / jornada completa)
-- [ ] Selfie capture + on-device compression
-- [ ] Geolocation + distance display
-- [ ] IndexedDB offline queue, flushed on reconnect
-- [ ] HTTPS in dev; tested on a real phone
-- [ ] Tests pass
+- [x] Stage plan written (`docs/plans/stage-3-employee-pwa.md`) - 2026-10-26
+- [x] Open questions answered (token in sessionStorage; distance shown only after clocking, no backend change; offline clocking without session allowed; consent v1: 12 months retention, requests to company admin, pending legal review) - 2026-10-26
+- [x] Plan updated for the answers (no branch coordinates; readiness chip before, server verdict after; consent v1 text) - 2026-10-26
+- [x] UI design (designer): `docs/design/stage-3-employee-pwa.md` — tokens with verified AA contrast, wireframes for all screens/states, component inventory, ES/EN key tables, a11y notes; section 8 lists 7 plan conflicts (default: adopt the spec's resolution) - 2026-10-26
+- [x] Coder started on Stage 3 (plan + design spec; spec section 8 resolutions adopted) - 2026-10-27
+- [x] Backend: `POST /api/auth/logout` (bump `token_version`) + `LogoutIntegrationTest` - 2026-10-27
+- [x] Login screen with PIN keypad - 2026-10-27
+- [x] Consent screen (Ley 8968, v1 `2026-10-v1`) - 2026-10-27
+- [x] Main screen, 3 states (antes de marcar / en turno / jornada completa) - 2026-10-27
+- [x] Selfie capture + on-device compression (baseline JPEG) - 2026-10-27
+- [x] Geolocation readiness chip + server verdict/distance after clocking - 2026-10-27
+- [x] IndexedDB offline queue, flushed on reconnect; re-auth dialog keeps queued entries - 2026-10-27
+- [x] PWA update prompt, strict CSP + Trusted Types, `dev:phone` HTTPS script, README phone steps - 2026-10-27
+- [x] Coder's checks pass (re-verified): frontend lint + build + 532 tests (42 files); backend 632 tests, 0 failures, 2 skipped - 2026-10-27
+- [x] Tester review: +34 tests (frontend 566 in 43 files, backend 632); fixed `Retry-After: 0` hot loop and "Jornada completa" persisting past local midnight - 2026-10-27
+- [x] Security audit: `securityAudit-report/stage-3-employee-pwa.md` — 0 Critical, 0 High, 1 Medium (previous employee's results kept in memory after logout/switch), 4 Low, 6 Info - 2026-10-27
+- [x] Security fixes (M-1, L-1, L-2, L-4, I-1, I-6; L-3 documented; flush-guard race closed) — re-verified: frontend lint + build + 595 tests (44 files) twice; `dist/sw.js` has no `importScripts` - 2026-10-28
+- [ ] Consent text: mention 7-day on-device retention of unsent entries (pending legal review)
+- [x] Manual test by user in desktop Chrome (phone emulation, DevTools GPS sensor, webcam selfie, offline queue, ES/EN, logout, location blocked): all passed - 2026-10-28
+- [ ] Real-phone check (camera, real GPS, install + cold-start offline, SW under Trusted Types) — deferred: LAN access to this PC is blocked by the corporate endpoint security; do it via USB port-forward or in Stage 5 on the real HTTPS server
+- [x] Commit + push to `stage1-2` - 2026-10-28
 
 ## Stage 4 - Admin panel
 

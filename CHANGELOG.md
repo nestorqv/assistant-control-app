@@ -1,5 +1,49 @@
 # Changelog
 
+## [2026-10-27]
+
+### Added
+
+- Stage 3 employee PWA (`docs/plans/stage-3-employee-pwa.md`, design in `docs/design/stage-3-employee-pwa.md`): login with an 8-digit PIN keypad, the Ley 8968 consent screen (text version `2026-10-v1`, pending legal review), and the main screen with the single clock button, server clock, status line, worked time, entry times, review badges and late minutes (EN/ES).
+- Selfie capture (front camera with a file-input fallback, compressed on the phone to about 1024 px baseline JPEG with a header check), best-fix GPS within 20 s, readiness chip before sending and the server's geofence result after. The phone never computes a distance.
+- IndexedDB outbox (`idb`): every clock action is queued and sent strictly FIFO, one request at a time, with `deviceSentAt` set at send time and the same `clientUuid` on retries (200 and 201 both succeed), backoff, `Retry-After`, a Web Lock against two tabs, at most 8 unsent entries and a 5 MB free-space check. Final 4xx errors become failure cards and drop the photo at once. Cold open offline with a stored identity can still queue entries.
+- Session handling: token in `sessionStorage`, non-secret identity in IndexedDB, PIN never stored; PIN re-auth dialog on 401 or expiry (resends with the same `clientUuid`); sign-out always confirms, warns about unsent entries and wipes the device; one identity per device.
+- Server clock with a monotonic base, suspend/clock-change detection and "(aprox.)" after an offline reload; dates and times in the company time zone.
+- `POST /api/auth/logout` (bumps `token_version`, ends every session of that employee) with `LogoutIntegrationTest` (6 tests).
+- PWA update prompt (`registerType: 'prompt'`, never during a capture or a flush), no caching of API responses or photos.
+- Security headers in `frontend/securityHeaders.ts` (strict CSP, `Permissions-Policy`, `Referrer-Policy`, `nosniff`, COOP) enforced by `vite preview`; dev gets the same without the CSP; Trusted Types `default` policy that only allows `/sw.js`; lint bans `react/no-danger`, `no-eval`, `no-new-func`.
+- `npm run dev:phone` and `npm run preview:phone` (HTTPS on the LAN with `@vitejs/plugin-basic-ssl`).
+- Frontend tests: 532 now (API, storage, flush, session, clock, capture, pages, accessibility, drift guards against the Java enums, bundle budget, CSP and built-output checks). New dev dependencies: `@vitejs/plugin-basic-ssl`, `fake-indexeddb`, `workbox-window`; new dependency: `idb`.
+- README: "Employee PWA", "Security headers", "Testing on a phone", the logout endpoint and the new scripts.
+
+### Fixed
+
+- Stage 3 audit M-1 (`securityAudit-report/stage-3-employee-pwa.md`): `OutboxProvider` drops its per-session state (items, last results, last delivered entry, network flag) and cancels its backoff timer whenever the signed-in employee changes (logout, "not you", sign-in as someone else), so the next person never sees or hears the previous employee's result. A POST that finishes after the person signed out is discarded, `useToday` ignores and never saves a response for a different employee, and an account switch clears the previous employee's IndexedDB snapshot. The per-page announcer is already disposed with the page.
+- Audit L-2: the local wipe retries each step (3 attempts), logs failures without personal data, returns whether it completed and sets `attendance.wipePending`; the next start repeats the wipe and restores no identity until it succeeds. The flush re-checks before every send that the item's employee (and company code, when stored) matches the identity the token belongs to, and otherwise sends nothing. The backoff timer of the previous session is cancelled on sign-out.
+- Audit L-4: unsent items older than 7 days (`OUTBOX_MAX_AGE_MS`) are expired at app open and before each flush: photo and coordinates are dropped, the item becomes a failure card with its own EN/ES message. Final failures now drop the coordinates as well as the photo.
+- Audit I-1: `inlineWorkboxRuntime: true`, so `sw.js` has no `importScripts` and works under Trusted Types with the CSP unchanged.
+- Flush guard race (tester): a `flushOnce` call that arrives while a run is finishing now asks the run to look at the queue once more instead of returning idle, so an entry enqueued at that moment is not left waiting.
+- `Retry-After: 0` no longer causes a hot loop: the retry wait is at least 1 second.
+- "Jornada completa" no longer stays on screen after local midnight in the company time zone (a network answer is also refreshed against the local date).
+
+### Security
+
+- Audit L-1: signing out, "¿No es usted?" and signing in as another employee no longer delete anyone's unsent entries. They stay on the phone, isolated by employee, and are sent when that employee signs in again (or expire after 7 days). The sign-out and switch dialogs (EN/ES) now say so and are no longer destructive.
+- Audit I-6: `workbox-window` moved from `devDependencies` to `dependencies` (it ships in the bundle, so `npm audit --omit=dev` covers it).
+- Audit L-3: README "Testing on a phone" warns that `dev:phone` exposes the dev stack to the LAN and recommends USB port forwarding to `localhost` (`adb reverse`). The rate limiter is unchanged.
+
+### Added (tests)
+
+- 29 new frontend tests (595 in total): session isolation across logout and account switch, an in-flight POST after sign-out, per-employee queue retention, the stale backoff timer, send-time identity checks, the flush guard race, the 7-day expiry (storage, flush and app open), coordinates dropped on failure, wipe retry, flag and logging, and the `pwaConfig` checks for the inlined runtime and `workbox-window`. Existing sign-out, switch and PIN dialog tests now expect that entries are kept.
+
+### Changed
+
+- The sign-out and employee-switch dialogs use the default (non-destructive) style; the "Cerrar sesión y borrar" / "Continuar y borrar" actions are now "Cerrar sesión" / "Continuar". `signOut()` and `performLogout()` return whether the wipe completed.
+- `/` is the employee app behind a session guard (`/login`, `/consent`); `HealthStatus` moved from the employee screen to `/admin`, which is now lazy-loaded.
+- `AppHeader` shows a sign-out button when an identity exists; layout tokens, focus rings and reduced-motion rules in `index.css` (WCAG 2.2 AA).
+- `vite.config.ts` is a function of the mode; `assetsInlineLimit: 0`; the PWA options are exported for tests and use the new workbox settings (`globPatterns`, `navigateFallback`, `cleanupOutdatedCaches`, no `runtimeCaching`).
+- The i18n no-hardcoded-text test now also scans `.ts` modules; the JSX text pattern still applies to `.tsx` only.
+
 ## [2026-10-23]
 
 ### Fixed

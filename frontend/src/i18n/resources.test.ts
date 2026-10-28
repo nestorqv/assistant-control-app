@@ -22,7 +22,13 @@ test('placeholders match between languages', () => {
 })
 
 // Language-neutral texts are the same in both languages on purpose.
-const SAME_IN_BOTH: string[] = ['health.httpStatus']
+const SAME_IN_BOTH: string[] = [
+  'health.httpStatus', // "HTTP 503"
+  'login.pin', // "PIN" is the same word in both languages
+  'duration.hm', // "9 h 05 min": international symbols
+  'duration.m', // "45 min"
+  'home.noTime', // "--:--" placeholder
+]
 
 test('english differs from spanish except the language endonyms', () => {
   for (const key of keys) {
