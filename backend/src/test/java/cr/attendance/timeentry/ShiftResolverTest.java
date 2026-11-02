@@ -120,4 +120,33 @@ class ShiftResolverTest {
     void nextActionOnACleanDay() {
         assertThat(ShiftResolver.nextAction(List.of(), MON_2200, MAX, MON)).isEqualTo(NextAction.CLOCK_IN);
     }
+
+    // An admin-created entry has server_time = the moment the admin acted, but it belongs to its own work date:
+    // the shift rules must read the typed (effective) time, never the receipt time.
+    private static TimeEntry adminEntry(TimeEntryType type, Instant receivedNow, Instant typed, LocalDate workDate) {
+        return TimeEntry.manual(1L, 1L, 1L, type, receivedNow, typed, UUID.randomUUID(), workDate, null);
+    }
+
+    @Test
+    void aPastDatedAdminClockInIsNotTodaysOpenShift() {
+        Instant tuesday0900 = Instant.parse("2026-10-20T15:00:00Z");
+        TimeEntry monday = adminEntry(TimeEntryType.CLOCK_IN, tuesday0900, MON_2200.minus(Duration.ofHours(14)), MON);
+        assertThat(ShiftResolver.openShift(List.of(monday), tuesday0900, MAX, TUE)).isEmpty();
+        assertThat(ShiftResolver.forgottenShift(List.of(monday), tuesday0900, MAX, TUE)).contains(monday);
+        assertThat(ShiftResolver.nextAction(List.of(monday), tuesday0900, MAX, TUE)).isEqualTo(NextAction.CLOCK_IN);
+        // The employee can still clock in for Tuesday.
+        assertThat(ShiftResolver.decide(TimeEntryType.CLOCK_IN, List.of(monday), tuesday0900, MAX, TUE).violation())
+                .isNull();
+    }
+
+    @Test
+    void todaysAdminClockInIsAnOpenShiftTheEmployeeCanCloseFromThePhone() {
+        Instant now = Instant.parse("2026-10-20T20:00:00Z"); // 14:00 CR on Tuesday
+        TimeEntry in = adminEntry(TimeEntryType.CLOCK_IN, now, Instant.parse("2026-10-20T14:00:00Z"), TUE); // 08:00 CR
+        assertThat(ShiftResolver.openShift(List.of(in), now, MAX, TUE)).contains(in);
+        ShiftResolver.Decision out = ShiftResolver.decide(TimeEntryType.CLOCK_OUT, List.of(in), now, MAX, TUE);
+        assertThat(out.violation()).isNull();
+        assertThat(out.workDate()).isEqualTo(TUE);
+        assertThat(out.shiftTooLong()).isFalse();
+    }
 }

@@ -63,7 +63,7 @@ function server(options: { post?: () => Response | Promise<Response>; status?: 2
   return { mock, calls, posts }
 }
 
-const dialog = () => screen.getByRole('dialog', { name: 'Tu selfie' })
+const dialog = () => screen.getByRole('dialog', { name: 'Su selfie' })
 
 async function openCapture(user: ReturnType<typeof userEvent.setup>) {
   await user.click(await screen.findByRole('button', { name: 'Marcar entrada' }))
@@ -146,7 +146,7 @@ describe('online clock-in', () => {
     await user.click(await screen.findByRole('button', { name: 'Usar foto' }))
 
     const card = await screen.findByRole('alert')
-    expect(within(card).getByText('Ya tenías una entrada registrada, así que esta marca no se guardó.')).toBeDefined()
+    expect(within(card).getByText('Ya tenía una entrada registrada, así que esta marca no se guardó.')).toBeDefined()
     const [stored] = await listAll()
     expect(stored).toMatchObject({ state: 'failed', photo: null })
   })
@@ -196,8 +196,8 @@ describe('cancel and release', () => {
     expect(screen.getByLabelText('Vista previa de la cámara').className).toContain('preview-video')
     await user.click(screen.getByRole('button', { name: 'Tomar foto' }))
     expect(await screen.findByText('La foto se guarda sin efecto espejo.')).toBeDefined()
-    expect(screen.getByRole('img', { name: 'Vista previa de tu selfie' })).toBeDefined()
-    expect(screen.getByText('Al usar la foto se registra tu entrada.')).toBeDefined()
+    expect(screen.getByRole('img', { name: 'Vista previa de su selfie' })).toBeDefined()
+    expect(screen.getByText('Al usar la foto se registra su entrada.')).toBeDefined()
   })
 })
 
@@ -312,10 +312,10 @@ describe('camera problems', () => {
     await user.click(await screen.findByRole('button', { name: 'Usar la cámara del teléfono' }))
     const input = screen.getByTestId('selfie-file-input')
     await user.upload(input, new File(['x'], 'a.jpg', { type: 'image/jpeg' }))
-    expect(await screen.findByText('No se pudo preparar la foto. Vuelve a tomarla.')).toBeDefined()
+    expect(await screen.findByText('No se pudo preparar la foto. Vuelva a tomarla.')).toBeDefined()
     await user.click(screen.getByRole('button', { name: 'Repetir' }))
     await user.upload(input, new File(['y'], 'b.jpg', { type: 'image/jpeg' }))
-    expect(await screen.findByText('No se puede marcar sin selfie. Contacta a tu administrador.')).toBeDefined()
+    expect(await screen.findByText('No se puede marcar sin selfie. Contacte a su administrador.')).toBeDefined()
     expect(screen.queryByRole('button', { name: 'Usar la cámara del teléfono' })).toBeNull()
   })
 
@@ -326,7 +326,7 @@ describe('camera problems', () => {
     const user = userEvent.setup()
     renderApp('/')
     await openCapture(user)
-    expect(await screen.findByText(/Tu teléfono te pedirá permiso para usar la cámara y la ubicación/)).toBeDefined()
+    expect(await screen.findByText(/Su teléfono le pedirá permiso para usar la cámara y la ubicación/)).toBeDefined()
     expect(cam.track.stopped).toBe(false)
     await user.click(screen.getByRole('button', { name: 'Continuar' }))
     expect(await screen.findByRole('button', { name: 'Tomar foto' })).toBeDefined()
@@ -412,7 +412,7 @@ describe('offline and limits', () => {
     await user.click(screen.getByRole('button', { name: 'Marcar salida' }))
 
     const alert = await screen.findByRole('alert')
-    expect(alert.textContent).toBe('Tienes demasiadas marcas sin enviar. Conéctate a internet para enviarlas.')
+    expect(alert.textContent).toBe('Tiene demasiadas marcas sin enviar. Conéctese a internet para enviarlas.')
     expect(screen.queryByRole('dialog')).toBeNull()
     expect(await listAll()).toHaveLength(8)
   })

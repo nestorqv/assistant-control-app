@@ -94,22 +94,22 @@ class SchemaRangeConstraintsTest {
         TestData.Tenant t = data.tenant();
         long emp = data.employee(t.companyId(), t.branchId(), "EMPLOYEE");
         String sql = """
-                insert into time_entry (company_id, employee_id, branch_id, type, source, latitude, longitude, distance_meters, client_uuid, work_date)
-                values (?, ?, ?, 'CLOCK_OUT', 'QR', ?, ?, ?, ?, current_date)
+                insert into time_entry (effective_time, company_id, employee_id, branch_id, type, source, latitude, longitude, distance_meters, client_uuid, work_date)
+                values (now(), ?, ?, ?, 'CLOCK_OUT', 'QR', ?, ?, ?, ?, current_date)
                 """;
         assertRejected(() -> jdbc.update(sql, t.companyId(), emp, t.branchId(), 91, 0, 10, UUID.randomUUID()));
         assertRejected(() -> jdbc.update(sql, t.companyId(), emp, t.branchId(), 0, 181, 10, UUID.randomUUID()));
         assertRejected(() -> jdbc.update(sql, t.companyId(), emp, t.branchId(), 0, 0, -1, UUID.randomUUID()));
         assertRejected(() -> jdbc.update(
-                "insert into time_entry (company_id, employee_id, branch_id, type, source, client_uuid, work_date) "
-                        + "values (?, ?, ?, 'OTRO', 'QR', ?, current_date)", t.companyId(), emp, t.branchId(), UUID.randomUUID()));
+                "insert into time_entry (effective_time, company_id, employee_id, branch_id, type, source, client_uuid, work_date) "
+                        + "values (now(), ?, ?, ?, 'OTRO', 'QR', ?, current_date)", t.companyId(), emp, t.branchId(), UUID.randomUUID()));
         assertRejected(() -> jdbc.update(
-                "insert into time_entry (company_id, employee_id, branch_id, type, source) "
-                        + "values (?, ?, ?, 'CLOCK_IN', 'QR')", t.companyId(), emp, t.branchId()));
+                "insert into time_entry (effective_time, company_id, employee_id, branch_id, type, source) "
+                        + "values (now(), ?, ?, ?, 'CLOCK_IN', 'QR')", t.companyId(), emp, t.branchId()));
         // GPS-less marks (QR/tablet) are valid: coordinates and distance are nullable.
         jdbc.update("""
-                insert into time_entry (company_id, employee_id, branch_id, type, source, client_uuid, work_date)
-                values (?, ?, ?, 'CLOCK_OUT', 'TABLET', ?, current_date)
+                insert into time_entry (effective_time, company_id, employee_id, branch_id, type, source, client_uuid, work_date)
+                values (now(), ?, ?, ?, 'CLOCK_OUT', 'TABLET', ?, current_date)
                 """, t.companyId(), emp, t.branchId(), UUID.randomUUID());
     }
 
@@ -137,12 +137,12 @@ class SchemaRangeConstraintsTest {
         // GPS evidence has no file: storage_key is nullable.
         jdbc.update("insert into evidence (company_id, time_entry_id, type) values (?, ?, 'GPS')", t.companyId(), timeEntry);
         assertRejected(() -> jdbc.update("""
-                insert into adjustment (company_id, time_entry_id, admin_id, reason, field, new_value)
-                values (?, ?, ?, '   ', 'status', 'VALID')
+                insert into adjustment (company_id, time_entry_id, admin_id, action, reason, field, new_value)
+                values (?, ?, ?, 'APPROVE', '   ', 'status', 'VALID')
                 """, t.companyId(), timeEntry, admin));
         assertRejected(() -> jdbc.update("""
-                insert into adjustment (company_id, time_entry_id, admin_id, reason, field, new_value)
-                values (?, ?, ?, 'reason', 'status', null)
+                insert into adjustment (company_id, time_entry_id, admin_id, action, reason, field, new_value)
+                values (?, ?, ?, 'APPROVE', 'reason', 'status', null)
                 """, t.companyId(), timeEntry, admin));
     }
 
@@ -155,8 +155,8 @@ class SchemaRangeConstraintsTest {
         long timeEntry = data.timeEntry(t.companyId(), emp, t.branchId());
         jdbc.update("insert into evidence (company_id, time_entry_id, type) values (?, ?, 'PHOTO')", t.companyId(), timeEntry);
         jdbc.update("""
-                insert into adjustment (company_id, time_entry_id, admin_id, reason, field, old_value, new_value)
-                values (?, ?, ?, 'Corrección', 'status', 'PENDING_REVIEW', 'VALID')
+                insert into adjustment (company_id, time_entry_id, admin_id, action, reason, field, old_value, new_value)
+                values (?, ?, ?, 'APPROVE', 'Corrección', 'status', 'PENDING_REVIEW', 'VALID')
                 """, t.companyId(), timeEntry, admin);
     }
 

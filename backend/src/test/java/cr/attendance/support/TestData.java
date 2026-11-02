@@ -109,8 +109,8 @@ public class TestData {
 
     public long timeEntry(long companyId, long employeeId, long branchId, String type, LocalDate workDate) {
         return jdbc.queryForObject("""
-                insert into time_entry (company_id, employee_id, branch_id, type, source, client_uuid, work_date)
-                values (?, ?, ?, ?, 'MOBILE', ?, ?) returning id
+                insert into time_entry (effective_time, company_id, employee_id, branch_id, type, source, client_uuid, work_date)
+                values (now(), ?, ?, ?, ?, 'MOBILE', ?, ?) returning id
                 """, Long.class, companyId, employeeId, branchId, type, UUID.randomUUID(), workDate);
     }
 

@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.Properties;
+import java.util.regex.Pattern;
 import org.junit.jupiter.api.Test;
 
 /** The three bundles must stay in sync, and be read as UTF-8 without a BOM. */
@@ -63,6 +64,29 @@ class MessageBundleParityTest {
         Properties es = load("messages_es.properties");
         Properties en = load("messages_en.properties");
         es.forEach((k, v) -> assertThat(en.getProperty((String) k)).as("key " + k).isNotEqualTo(v));
+    }
+
+    // Same pattern as frontend/src/i18n/resources.test.ts: Spanish is "usted" everywhere.
+    private static final Pattern TU_FORMS = Pattern.compile(
+            "(?<![\\p{L}\\p{N}_])(tú|tu|tus|ti|te|tienes|puedes|quieres|debes|necesitas|eres|llevas|tenías|estás|tendrás"
+                    + "|podrás|fallaste|marcaste|ingresa|escribe|revisa|contacta|vuelve|elige|toca|(?<![}] )(?<!ya )usa"
+                    + "|centra|libera|conéctate|inténtalo|ciérrala|espera)(?![\\p{L}\\p{N}_])",
+            Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
+
+    @Test
+    void theTuPatternReallyMatchesAccentedForms() {
+        assertThat(TU_FORMS.matcher("¿No eres tú?").find()).isTrue();
+        assertThat(TU_FORMS.matcher("Escribe tu código").find()).isTrue();
+        assertThat(TU_FORMS.matcher("¿No es usted?").find()).isFalse();
+        assertThat(TU_FORMS.matcher("actuar").find()).isFalse();
+    }
+
+    @Test
+    void noSpanishMessageUsesTheTuRegister() throws IOException {
+        for (String file : new String[] {"messages.properties", "messages_es.properties"}) {
+            load(file).forEach((k, v) -> assertThat(TU_FORMS.matcher(String.valueOf(v)).find())
+                    .as(file + " " + k + ": " + v).isFalse());
+        }
     }
 
     @Test

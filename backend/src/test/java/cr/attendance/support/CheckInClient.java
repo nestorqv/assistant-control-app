@@ -69,7 +69,9 @@ public class CheckInClient {
 
     /** A new tenant with one consented employee, logged in through the real endpoint. */
     public Actor actor() throws Exception {
-        return actor(data.tenant(), "EMPLOYEE", true);
+        TestData.Tenant tenant = data.tenant();
+        discardFilesLeftByAnotherDatabase(tenant.companyId());
+        return actor(tenant, "EMPLOYEE", true);
     }
 
     public Actor actor(TestData.Tenant tenant, String role, boolean consent) throws Exception {
@@ -155,6 +157,23 @@ public class CheckInClient {
 
     public Path storedFile(String key) {
         return Path.of(storageRoot).toAbsolutePath().resolve(key);
+    }
+
+    /**
+     * Test classes with a different Spring context use a different embedded database, so the same company id can
+     * be handed out twice in one JVM. A new tenant starts with an empty storage directory, whatever an earlier
+     * database left under its id.
+     */
+    private void discardFilesLeftByAnotherDatabase(long companyId) {
+        Path dir = Path.of(storageRoot).toAbsolutePath().resolve(String.valueOf(companyId));
+        if (!Files.isDirectory(dir)) {
+            return;
+        }
+        try (Stream<Path> paths = Files.walk(dir)) {
+            paths.sorted(java.util.Comparator.reverseOrder()).forEach(p -> p.toFile().delete());
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     /** Regular files stored for one company. Tests never count the shared directory as a whole. */

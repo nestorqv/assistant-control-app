@@ -1,0 +1,189 @@
+/* Admin panel: dialogs and forms. Imported by AdminApp (admin chunk only). */
+.adm-dialog {
+  width: min(32rem, 100%);
+}
+
+.adm-dialog--wide {
+  width: min(56rem, 100%);
+}
+
+@media (max-width: 47.9375rem) {
+  .adm-dialog,
+  .adm-dialog--wide {
+    width: 100%;
+    height: 100dvh;
+    border-radius: 0;
+  }
+}
+
+.adm-dialog__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.adm-dialog h2,
+.adm-dialog h3 {
+  margin: 0;
+}
+
+.adm-dialog__sub {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.adm-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.adm-summary dd,
+.adm-facts dd {
+  margin: 0;
+}
+
+.adm-summary dt,
+.adm-facts dt {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+
+.adm-evidence {
+  display: grid;
+  grid-template-columns: minmax(0, 22.5rem) minmax(0, 1fr);
+  gap: var(--space-4);
+}
+
+@media (max-width: 47.9375rem) {
+  .adm-evidence {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.adm-photo {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.adm-photo__frame {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 3 / 4;
+  max-width: 22.5rem;
+  max-height: 30rem;
+  background: var(--chip-grey-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.adm-photo__frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.adm-photo__state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  text-align: center;
+}
+
+.adm-facts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.adm-facts dl {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.adm-facts__status,
+.adm-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.adm-coordinates {
+  font-family: ui-monospace, monospace;
+  user-select: all;
+}
+
+.adm-geo--outside {
+  color: var(--chip-violet-fg);
+}
+
+.adm-history {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding-left: 1.5rem;
+}
+
+.adm-history p {
+  margin: 0;
+}
+
+.adm-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.adm-preset {
+  min-height: var(--target-ctl);
+  padding: 0 var(--space-3);
+  font: inherit;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.adm-reason textarea,
+.adm-toolbar select,
+.adm-filters select,
+.adm-toolbar input[type='date'],
+.adm-filters input[type='date'],
+.field input[type='datetime-local'] {
+  width: 100%;
+  min-height: 40px;
+  font: inherit;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.adm-counter {
+  margin: 0;
+  font-size: 0.875rem;
+  text-align: right;
+  color: var(--color-text-muted);
+}
+
+@media (forced-colors: active) {
+  .adm-chip,
+  .adm-kpi,
+  .adm-table-wrap,
+  .adm-card,
+  .adm-review-card {
+    border: 1px solid ButtonText;
+  }
+}

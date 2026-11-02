@@ -3,7 +3,7 @@ import { expect, test } from 'vitest'
 // Every component, page, module and entry file, as raw source. Tests, test helpers and the
 // resource tables themselves are excluded.
 const files = import.meta.glob(
-  ['../**/*.{ts,tsx}', '!../**/*.test.{ts,tsx}', '!../test/**', '!../i18n/resources.ts', '!../vite-env.d.ts'],
+  ['../**/*.{ts,tsx}', '!../**/*.test.{ts,tsx}', '!../test/**', '!../i18n/resources.ts', '!../i18n/adminResources.ts', '!../vite-env.d.ts'],
   {
     query: '?raw',
     import: 'default',
@@ -13,7 +13,7 @@ const files = import.meta.glob(
 
 const SPANISH_CHARS = /[áéíóúñ¿¡ÁÉÍÓÚÑ]/
 const SPANISH_WORDS =
-  /\b(Servidor|Panel|Volver|Inicio|Idioma|Página|Verificando|empleado|administrador|Asistencia|Marcar|entrada|salida|turno|Jornada|señal|Hola|Acepto|Ingresar|Cerrar|sesión|ubicación|Evidencia)\b/i
+  /\b(Servidor|Panel|Volver|Inicio|Idioma|Página|Verificando|empleado|administrador|Asistencia|Marcar|entrada|salida|turno|Jornada|señal|Hola|Acepto|Ingresar|Cerrar|sesión|ubicación|Evidencia|Presentes|tardías|Sin marcar|revisar|Aprobar|Rechazar|Sucursal|Exportar|Horario)\b/i
 
 test('the glob found the UI sources', () => {
   const names = Object.keys(files)
@@ -23,6 +23,7 @@ test('the glob found the UI sources', () => {
   expect(names.some((n) => n.endsWith('/pages/LoginPage.tsx'))).toBe(true)
   expect(names.some((n) => n.endsWith('/components/PinKeypad.tsx'))).toBe(true)
   expect(names.some((n) => n.endsWith('/sync/flush.ts'))).toBe(true)
+  expect(names.some((n) => n.endsWith('/admin/pages/DashboardPage.tsx'))).toBe(true)
 })
 
 test.each(Object.entries(files))('%s has no hardcoded Spanish text', (_name, source) => {

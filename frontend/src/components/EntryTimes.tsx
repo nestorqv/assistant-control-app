@@ -10,6 +10,8 @@ export type EntryColumn = {
   status: TimeEntryStatus | null
   reasonLabels: string[]
   lateMinutes?: number | null
+  /** The time shown was corrected or typed in by an administrator. */
+  adjusted?: boolean
 }
 
 type Props = { clockIn: EntryColumn | null; clockOut: EntryColumn | null }
@@ -23,6 +25,12 @@ function Column({ label, entry, showLate }: { label: string; entry: EntryColumn 
         {entry ? (
           <>
             <time className="entry-time">{entry.timeText}</time>
+            {entry.adjusted && (
+              <p className="adjusted">
+                <Icon name="info" />
+                <span>{t('home.adjusted')}</span>
+              </p>
+            )}
             {entry.result && <EntryResult {...entry.result} />}
             {entry.status === 'PENDING_REVIEW' && <ReviewNotice status="PENDING_REVIEW" reasons={entry.reasonLabels} />}
             {entry.status === 'REJECTED' && <ReviewNotice status="REJECTED" />}

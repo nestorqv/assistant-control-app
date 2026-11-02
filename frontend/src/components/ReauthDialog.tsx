@@ -18,10 +18,13 @@ type Props = {
   onSubmit: (pin: string) => void
   onLater: () => void
   onNotYou: () => void
+  /** Optional texts: the admin console says "repeat the action" instead of "your saved entries are kept". */
+  title?: string
+  body?: string
 }
 
 /** Presentational: the codes come from the stored identity and are read-only (nothing to retype). */
-export function ReauthDialog({ identity, busy, errorText, attempt, retryAt = null, onSubmit, onLater, onNotYou }: Props) {
+export function ReauthDialog({ identity, busy, errorText, attempt, retryAt = null, onSubmit, onLater, onNotYou, title, body }: Props) {
   const { t } = useI18n()
   const titleId = useId()
   // The PIN is cleared by tying it to the attempt it was typed in (no state reset inside an effect).
@@ -35,9 +38,9 @@ export function ReauthDialog({ identity, busy, errorText, attempt, retryAt = nul
   return (
     <ModalDialog labelledBy={titleId} onCancel={onLater} className="modal--reauth">
       <h2 id={titleId} tabIndex={-1} data-autofocus>
-        {t('reauth.title')}
+        {title ?? t('reauth.title')}
       </h2>
-      <p>{t('reauth.body')}</p>
+      <p>{body ?? t('reauth.body')}</p>
       <p className="identity__name">{identity.name}</p>
       <dl className="identity">
         <div>

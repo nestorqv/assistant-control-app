@@ -48,7 +48,8 @@ function toView(
 ): EntryView | null {
   if (pending) return { timeMs: Date.parse(pending.deviceTime), pending: true, outcome: null }
   const outcome = fromToday ?? fromResponse ?? null
-  return outcome ? { timeMs: Date.parse(outcome.serverTime), pending: false, outcome } : null
+  // The time that counts (an administrator may have corrected it), not the receipt time.
+  return outcome ? { timeMs: Date.parse(('effectiveTime' in outcome ? outcome.effectiveTime : undefined) ?? outcome.serverTime), pending: false, outcome } : null
 }
 
 /**

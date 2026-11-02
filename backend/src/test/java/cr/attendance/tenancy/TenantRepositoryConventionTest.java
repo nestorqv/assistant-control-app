@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import cr.attendance.employee.EmployeeRepository;
 import cr.attendance.employee.WorkScheduleRepository;
+import cr.attendance.audit.AuditLogRepository;
 import cr.attendance.company.BranchRepository;
 import cr.attendance.timeentry.AdjustmentRepository;
 import cr.attendance.timeentry.EvidenceRepository;
@@ -20,7 +21,8 @@ class TenantRepositoryConventionTest {
 
     private static final List<Class<?>> TENANT_REPOSITORIES = List.of(
             BranchRepository.class, EmployeeRepository.class, WorkScheduleRepository.class,
-            TimeEntryRepository.class, EvidenceRepository.class, AdjustmentRepository.class);
+            TimeEntryRepository.class, EvidenceRepository.class, AdjustmentRepository.class,
+            AuditLogRepository.class);
 
     @Test
     void tenantRepositoriesExtendTheBareRepositoryInterface() {

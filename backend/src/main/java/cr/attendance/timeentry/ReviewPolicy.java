@@ -12,7 +12,14 @@ public final class ReviewPolicy {
     }
 
     public record Input(Double lat, Double lng, Double accuracy, Integer distanceMeters, int radiusMeters,
-            Instant serverTime, Instant deviceTime, Instant deviceSentAt, boolean shiftTooLong) {
+            Instant serverTime, Instant deviceTime, Instant deviceSentAt, boolean shiftTooLong,
+            boolean clockOutAfterSchedule) {
+
+        public Input(Double lat, Double lng, Double accuracy, Integer distanceMeters, int radiusMeters,
+                Instant serverTime, Instant deviceTime, Instant deviceSentAt, boolean shiftTooLong) {
+            this(lat, lng, accuracy, distanceMeters, radiusMeters, serverTime, deviceTime, deviceSentAt,
+                    shiftTooLong, false);
+        }
     }
 
     public record Outcome(Set<ReviewReason> reasons, boolean syncedLate, int skewSeconds,
@@ -34,6 +41,9 @@ public final class ReviewPolicy {
             }
             if (lowAccuracy) {
                 reasons.add(ReviewReason.LOW_GPS_ACCURACY);
+            }
+            if (in.accuracy() == null || in.accuracy() < 1) {
+                reasons.add(ReviewReason.NO_GPS_ACCURACY);
             }
             inside = !outside && !lowAccuracy;
         }
@@ -58,6 +68,10 @@ public final class ReviewPolicy {
         }
         if (in.shiftTooLong()) {
             reasons.add(ReviewReason.SHIFT_TOO_LONG);
+        }
+
+        if (in.clockOutAfterSchedule()) {
+            reasons.add(ReviewReason.CLOCK_OUT_AFTER_SCHEDULE);
         }
 
         TimeEntryStatus status = reasons.isEmpty() ? TimeEntryStatus.VALID : TimeEntryStatus.PENDING_REVIEW;

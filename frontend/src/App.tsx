@@ -1,19 +1,34 @@
 import { lazy, Suspense } from 'react'
-import { Route, Routes } from 'react-router'
+import { Route, Routes, useLocation } from 'react-router'
+import { RequireAdmin } from './auth/RequireAdmin'
 import { RequireSession } from './auth/RequireSession'
 import { AppHeader } from './components/AppHeader'
+import { ChunkErrorBoundary } from './components/ChunkErrorBoundary'
 import { ConsentPage } from './pages/ConsentPage'
 import { EmployeeHome } from './pages/EmployeeHome'
 import { LoginPage } from './pages/LoginPage'
 import { NotFound } from './pages/NotFound'
+import { useI18n } from './i18n/useI18n'
 
-// Lazy so the employee bundle does not grow when the admin screens arrive in Stage 4.
-const AdminHome = lazy(() => import('./pages/AdminHome').then((m) => ({ default: m.AdminHome })))
+// Lazy and excluded from the service worker precache, so phones never download the admin console.
+const AdminApp = lazy(() => import('./admin/AdminApp').then((m) => ({ default: m.AdminApp })))
+
+function AdminLoading() {
+  const { t } = useI18n()
+  return (
+    <p role="status" className="screen">
+      {t('adminChunk.loading')}
+    </p>
+  )
+}
 
 export default function App() {
+  const { pathname } = useLocation()
+  // The admin shell has its own header (language, logout, my clock).
+  const inAdmin = pathname === '/admin' || pathname.startsWith('/admin/')
   return (
     <>
-      <AppHeader />
+      {!inAdmin && <AppHeader />}
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/consent" element={<ConsentPage />} />
@@ -25,12 +40,17 @@ export default function App() {
             </RequireSession>
           }
         />
+        {/* Outside RequireSession: the consent gate does not apply to the console. */}
         <Route
-          path="/admin"
+          path="/admin/*"
           element={
-            <Suspense fallback={null}>
-              <AdminHome />
-            </Suspense>
+            <RequireAdmin>
+              <ChunkErrorBoundary>
+                <Suspense fallback={<AdminLoading />}>
+                  <AdminApp />
+                </Suspense>
+              </ChunkErrorBoundary>
+            </RequireAdmin>
           }
         />
         <Route path="*" element={<NotFound />} />

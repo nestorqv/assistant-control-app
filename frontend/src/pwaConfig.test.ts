@@ -52,11 +52,25 @@ test('workbox-window ships in the app, so it is a production dependency (covered
   expect(pkg.devDependencies).not.toHaveProperty('workbox-window')
 })
 
+test('the admin chunk is excluded from the precache and built as its own named chunk', () => {
+  expect(pwaOptions.workbox).toMatchObject({ globIgnores: ['**/admin-*.js', '**/admin-*.css'] })
+  const groups = (config.build as any)?.rolldownOptions?.output?.codeSplitting?.groups as { name: string; test: RegExp }[]
+  expect(groups?.[0]?.name).toBe('admin')
+  expect(groups[0].test.test('/app/src/admin/pages/DashboardPage.tsx')).toBe(true)
+  expect(groups[0].test.test('C:\\app\\src\\i18n\\adminResources.ts')).toBe(true)
+  expect(groups[0].test.test('/app/src/pages/EmployeeHome.tsx')).toBe(false)
+})
+
 test('data URIs are never inlined (the CSP has no data:)', () => {
   expect(config.build?.assetsInlineLimit).toBe(0)
 })
 
-// These checks inspect the output of `npm run build`; they are skipped when dist/ does not exist.
+// These checks inspect the output of `npm run build`. Locally they are skipped when dist/ does not exist; in CI
+// (process.env.CI) a missing dist/ is a failure, so they can never pass by not running.
+test.runIf(!existsSync(manifestPath) && !!process.env.CI)('CI: dist/ exists (run `npm run build` before the tests)', () => {
+  expect(existsSync(manifestPath)).toBe(true)
+})
+
 describe.skipIf(!existsSync(manifestPath))('built PWA output', () => {
   const manifest = () => JSON.parse(readFileSync(manifestPath, 'utf8'))
   const html = () => readFileSync(resolve(dist, 'index.html'), 'utf8')

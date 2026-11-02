@@ -291,11 +291,15 @@ class CheckInRulesGapsIntegrationTest {
 
     @Test
     void theGpsAccuracyBoundaryIsAHundredMeters() throws Exception {
-        for (String ok : new String[] {"0", "100"}) {
+        for (String ok : new String[] {"1", "100"}) {
             Map<String, String> form = client.form("CLOCK_IN", clock.instant());
             form.put("accuracy", ok);
             assertThat(created(client.actor(), form).get("status").asText()).as("accuracy " + ok).isEqualTo("VALID");
         }
+        // Stage 4: an accuracy under 1 m is a scripted-client signal (NO_GPS_ACCURACY), not "perfect".
+        Map<String, String> zero = client.form("CLOCK_IN", clock.instant());
+        zero.put("accuracy", "0");
+        assertThat(reasons(created(client.actor(), zero))).containsExactly("NO_GPS_ACCURACY");
         Map<String, String> form = client.form("CLOCK_IN", clock.instant());
         form.put("accuracy", "100.5");
         JsonNode low = created(client.actor(), form);

@@ -29,7 +29,7 @@ describe('header and clock', () => {
   test('greeting uses the first name, the date is in the company zone and the clock is the server clock', async () => {
     await open(inShift)
     expect(await screen.findByRole('heading', { level: 1, name: 'Hola, María' })).toBeDefined()
-    await screen.findByText('Aún no has marcado hoy')
+    await screen.findByText('Aún no ha marcado hoy')
     expect(screen.getByText('Miércoles, 7 de octubre')).toBeDefined()
     expect(screen.getByText('Hora del servidor')).toBeDefined()
     expect(document.querySelector('time')?.textContent).toBe('10:13')
@@ -66,7 +66,7 @@ describe('header and clock', () => {
 describe('the three states', () => {
   test('CLOCK_IN: "Marcar entrada" and empty times', async () => {
     await open(inShift)
-    expect(await screen.findByText('Aún no has marcado hoy')).toBeDefined()
+    expect(await screen.findByText('Aún no ha marcado hoy')).toBeDefined()
     const button = screen.getByRole('button', { name: 'Marcar entrada' })
     expect(button.getAttribute('aria-disabled')).toBe('false')
     expect(screen.getAllByText('--:--')).toHaveLength(2)
@@ -75,7 +75,7 @@ describe('the three states', () => {
   test('CLOCK_OUT: on shift since, live worked time, the entry result and late minutes', async () => {
     await open(afterIn)
     expect(await screen.findByText('En turno desde 07:58')).toBeDefined()
-    expect(screen.getByText('Llevas 2 h 15 min')).toBeDefined()
+    expect(screen.getByText('Lleva 2 h 15 min')).toBeDefined()
     expect(screen.getByRole('button', { name: 'Marcar salida' })).toBeDefined()
     expect(screen.getByText('Dentro del área · a 35 m del local')).toBeDefined()
     expect(screen.getByText('Llegada tarde: 8 min')).toBeDefined()
@@ -83,7 +83,7 @@ describe('the three states', () => {
     // The worked time is computed locally and follows the clock.
     vi.setSystemTime(new Date('2026-10-07T17:13:00Z'))
     document.dispatchEvent(new Event('visibilitychange'))
-    expect(await screen.findByText('Llevas 3 h 15 min')).toBeDefined()
+    expect(await screen.findByText('Lleva 3 h 15 min')).toBeDefined()
   })
 
   test('NONE: day complete, "Listo por hoy" disabled with aria-disabled, both times and results', async () => {
@@ -107,7 +107,7 @@ describe('the three states', () => {
 describe('blocked and notices', () => {
   test('NO_BRANCH_ASSIGNED: message, disabled button described by it, no admin link for an employee', async () => {
     await open({ blockedReason: 'NO_BRANCH_ASSIGNED', branch: null })
-    const status = await screen.findByText('No tienes sucursal asignada. Consulta a tu administrador.')
+    const status = await screen.findByText('No tiene sucursal asignada. Consulte a su administrador.')
     const button = screen.getByRole('button', { name: 'Marcar entrada' })
     expect(button.getAttribute('aria-disabled')).toBe('true')
     expect(button.getAttribute('aria-describedby')).toBe(status.closest('h2')!.id)
@@ -124,7 +124,7 @@ describe('blocked and notices', () => {
 
   test('a missing clock-out of an earlier day is a notice with that date', async () => {
     await open({ missingClockOut: true, forgottenWorkDate: '2026-10-06' })
-    expect(await screen.findByText('No marcaste la salida del martes 6 de octubre. Tu administrador lo revisará.')).toBeDefined()
+    expect(await screen.findByText('No marcó la salida del martes 6 de octubre. Su administrador lo revisará.')).toBeDefined()
   })
 
   test('review badges translate each reason', async () => {
@@ -188,7 +188,7 @@ describe('blocked and notices', () => {
     renderApp('/')
     expect(await screen.findByText(/Último turno: /)).toBeDefined()
     expect(screen.getByText(/22:01–06:03 · 8 h 02 min/)).toBeDefined()
-    expect(screen.getByText('Aún no has marcado hoy')).toBeDefined()
+    expect(screen.getByText('Aún no ha marcado hoy')).toBeDefined()
   })
 })
 
@@ -198,7 +198,7 @@ describe('loading and offline cold open', () => {
     await seedSession({ token: false })
     stubFetch()
     renderApp('/')
-    expect(await screen.findByText('Conéctate para cargar tu estado')).toBeDefined()
+    expect(await screen.findByText('Conéctese para cargar su estado')).toBeDefined()
     expect(screen.getByRole('button', { name: 'Marcar entrada' }).getAttribute('aria-disabled')).toBe('true')
     expect(screen.getByText('Sin señal, la marca se guarda y se envía al reconectar.')).toBeDefined()
   })
@@ -210,7 +210,7 @@ describe('loading and offline cold open', () => {
     await saveSnapshot({ employeeId: 7, today: today({ nextAction: 'CLOCK_IN' }), clockOffsetMs: null, savedAt: 1 })
     stubFetch()
     renderApp('/')
-    expect(await screen.findByText('Aún no has marcado hoy')).toBeDefined()
+    expect(await screen.findByText('Aún no ha marcado hoy')).toBeDefined()
     expect(screen.getByRole('button', { name: 'Marcar entrada' }).getAttribute('aria-disabled')).toBe('false')
   })
 
@@ -337,13 +337,32 @@ describe('final failures', () => {
     renderApp('/')
 
     const card = await screen.findByRole('alert')
-    expect(within(card).getByRole('heading', { name: 'No se pudo registrar tu salida' })).toBeDefined()
-    expect(within(card).getByText('No tienes una entrada abierta, así que no se pudo registrar la salida.')).toBeDefined()
-    expect(within(card).getByText('Contacta a tu administrador.')).toBeDefined()
+    expect(within(card).getByRole('heading', { name: 'No se pudo registrar su salida' })).toBeDefined()
+    expect(within(card).getByText('No tiene una entrada abierta, así que no se pudo registrar la salida.')).toBeDefined()
+    expect(within(card).getByText('Contacte a su administrador.')).toBeDefined()
     expect(within(card).getByText('Marca de las 17:03')).toBeDefined()
 
     await user.click(within(card).getByRole('button', { name: 'Entendido' }))
     await waitFor(() => expect(screen.queryByRole('alert')).toBeNull())
     await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('heading', { name: /En turno desde/ })))
+  })
+})
+
+describe('times corrected by an administrator', () => {
+  test('the effective time is shown with the "adjusted" note; an untouched entry has no note', async () => {
+    await open({
+      nextAction: 'CLOCK_OUT',
+      inProgress: true,
+      // Received 07:58, corrected to 07:30 by the administrator.
+      clockIn: entrySummary({ serverTime: '2026-10-07T13:58:00Z', effectiveTime: '2026-10-07T13:30:00Z', adjusted: true }),
+    })
+    expect(await screen.findByText('En turno desde 07:30')).toBeDefined()
+    expect(screen.getByText('Hora ajustada por su administrador')).toBeDefined()
+  })
+
+  test('without a correction there is no note (and it is translated)', async () => {
+    await open(afterIn, 'en')
+    expect(await screen.findByText('On shift since 07:58')).toBeDefined()
+    expect(screen.queryByText('Time adjusted by your administrator')).toBeNull()
   })
 })

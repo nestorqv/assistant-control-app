@@ -63,10 +63,10 @@ class DevSeedContentTest {
 
         seeder.run(null);
 
-        assertThat(output.getAll()).contains("Dev seed created: company DEMO, 7 employees");
+        assertThat(output.getAll()).contains("Dev seed created: company DEMO, 13 employees");
         assertThat(output.getAll()).doesNotContain(SEED_PIN).doesNotContain("$2a$").doesNotContain("$2b$");
-        assertThat(jdbc.queryForObject("select count(*) from employee", Integer.class)).isEqualTo(7);
-        assertThat(jdbc.queryForObject("select count(*) from work_schedule", Integer.class)).isEqualTo(35);
+        assertThat(jdbc.queryForObject("select count(*) from employee", Integer.class)).isEqualTo(13);
+        assertThat(jdbc.queryForObject("select count(*) from work_schedule", Integer.class)).isEqualTo(65);
     }
 
     @Test
@@ -85,17 +85,18 @@ class DevSeedContentTest {
     }
 
     @Test
-    void sevenEmployeesWithTheDocumentedCodesNamesAndRoles() {
+    void thirteenEmployeesWithTheDocumentedCodesNamesAndRoles() {
         List<Map<String, Object>> rows = jdbc.queryForList(
                 "select code, name, job_title, role, active, consent_at is null as no_consent, "
                         + "failed_attempts, locked_until is null as unlocked, token_version, "
                         + "(branch_id is null) as no_branch from employee order by code");
         assertThat(rows).extracting(f -> f.get("code"))
-                .containsExactly("1001", "1002", "1003", "1004", "1005", "1006", "9001");
+                .containsExactly("1001", "1002", "1003", "1004", "1005", "1006", "1007", "1008", "1009", "1010",
+                        "1011", "1012", "9001");
         assertThat(rows).extracting(f -> f.get("name")).containsExactly("María Rojas", "José Vargas",
-                "Ana Chaves", "Luis Mora", "Karla Solís", "Diego Arias", "Administrador Demo");
-        assertThat(rows).extracting(f -> f.get("role"))
-                .containsExactly("EMPLOYEE", "EMPLOYEE", "EMPLOYEE", "EMPLOYEE", "EMPLOYEE", "EMPLOYEE", "ADMIN");
+                "Ana Chaves", "Luis Mora", "Karla Solís", "Diego Arias", "Marco Jiménez", "Sofía Quesada",
+                "Andrés Castro", "Lucía Herrera", "Pablo Araya", "Elena Brenes", "Administrador Demo");
+        assertThat(rows).filteredOn(f -> "ADMIN".equals(f.get("role"))).hasSize(1);
         assertThat(rows).allSatisfy(f -> {
             assertThat(f.get("active")).isEqualTo(true);
             assertThat(f.get("no_consent")).isEqualTo(true);
@@ -129,12 +130,13 @@ class DevSeedContentTest {
         assertThat(jdbc.queryForObject("""
                 select count(*) from work_schedule h join employee e on e.id = h.employee_id
                  where e.code <> '1005' and h.start_time = '08:00' and h.end_time = '17:00'
-                """, Integer.class)).isEqualTo(30);
+                """, Integer.class)).isEqualTo(60);
     }
 
     @Test
-    void everyDemoUserCanLogInAndTheAdminSeesAllSevenEmployees() throws Exception {
-        for (String code : List.of("1001", "1002", "1003", "1004", "1005", "1006", "9001")) {
+    void everyDemoUserCanLogInAndTheAdminSeesAllThirteenEmployees() throws Exception {
+        for (String code : List.of("1001", "1002", "1003", "1004", "1005", "1006", "1007", "1008", "1009", "1010",
+                "1011", "1012", "9001")) {
             mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
                             .content(mapper.writeValueAsString(Map.of("companyCode", "demo",
                                     "employeeCode", code, "pin", SEED_PIN))))
@@ -147,7 +149,7 @@ class DevSeedContentTest {
                 .andReturn().getResponse().getContentAsString()).get("token").asText();
         mockMvc.perform(get("/api/admin/employees").header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(7));
+                .andExpect(jsonPath("$.length()").value(13));
     }
 
     @Test

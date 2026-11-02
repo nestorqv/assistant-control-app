@@ -47,15 +47,15 @@ class DevSeedEnabledTest {
     void seedCreatesTheDemoCompanyIdempotentlyAndLoginWorks(CapturedOutput output) throws Exception {
         assertThat(count("select count(*) from company where code = 'DEMO'")).isEqualTo(1);
         assertThat(count("select count(*) from branch")).isEqualTo(1);
-        assertThat(count("select count(*) from employee")).isEqualTo(7);
+        assertThat(count("select count(*) from employee")).isEqualTo(13);
         assertThat(count("select count(*) from employee where role = 'ADMIN' and branch_id is null")).isEqualTo(1);
-        assertThat(count("select count(*) from work_schedule")).isEqualTo(35);
-        assertThat(count("select count(*) from employee where pin_hash like '$2%'")).isEqualTo(7);
+        assertThat(count("select count(*) from work_schedule")).isEqualTo(65);
+        assertThat(count("select count(*) from employee where pin_hash like '$2%'")).isEqualTo(13);
 
         seeder.run(null);
         assertThat(count("select count(*) from company where code = 'DEMO'")).isEqualTo(1);
-        assertThat(count("select count(*) from employee")).isEqualTo(7);
-        assertThat(count("select count(*) from work_schedule")).isEqualTo(35);
+        assertThat(count("select count(*) from employee")).isEqualTo(13);
+        assertThat(count("select count(*) from work_schedule")).isEqualTo(65);
 
         mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
                         .content("{\"companyCode\":\"DEMO\",\"employeeCode\":\"1001\",\"pin\":\"" + SEED_PIN + "\"}"))
@@ -64,5 +64,21 @@ class DevSeedEnabledTest {
         // The second seeder run above logs too; the PIN must never appear in any captured output.
         assertThat(output.getAll()).doesNotContain(SEED_PIN);
         assertThat(output.getAll()).contains("Dev seed already present");
+    }
+
+    @Test
+    void aMissingDemoEmployeeIsEnsuredAndExistingPinsAreNeverReset(CapturedOutput output) {
+        String before = jdbc.queryForObject("select pin_hash from employee where code = '1001'", String.class);
+        jdbc.update("delete from work_schedule where employee_id = (select id from employee where code = '1012')");
+        jdbc.update("delete from employee where code = '1012'");
+        assertThat(count("select count(*) from employee")).isEqualTo(12);
+
+        seeder.run(null);
+
+        assertThat(count("select count(*) from employee")).isEqualTo(13);
+        assertThat(count("select count(*) from work_schedule")).isEqualTo(65);
+        assertThat(jdbc.queryForObject("select pin_hash from employee where code = '1001'", String.class))
+                .isEqualTo(before);
+        assertThat(output.getAll()).contains("added 1 missing demo employees").doesNotContain(SEED_PIN);
     }
 }

@@ -5,7 +5,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties("app.time-entry")
 public record TimeEntryProperties(Duration maxShiftDuration, Duration clockSkewTolerance,
-        int maxGpsAccuracyMeters, Duration lockTimeout, RateLimit rateLimit) {
+        int maxGpsAccuracyMeters, Duration lockTimeout, Duration afterScheduleTolerance,
+        RateLimit rateLimit) {
 
     public record RateLimit(int maxAttempts, Duration window) {
     }

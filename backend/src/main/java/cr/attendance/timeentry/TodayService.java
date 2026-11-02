@@ -82,8 +82,9 @@ public class TodayService {
 
         Long workedMinutes = null;
         if (clockIn != null) {
-            Instant end = clockOut != null ? clockOut.getServerTime() : now;
-            workedMinutes = Duration.between(clockIn.getServerTime(), end).toMinutes();
+            // Worked time always reads effective_time (an admin may have corrected it).
+            Instant end = clockOut != null ? clockOut.getEffectiveTime() : now;
+            workedMinutes = Math.max(0, Duration.between(clockIn.getEffectiveTime(), end).toMinutes());
         }
         boolean missingClockOut = forgotten.isPresent()
                 || (open.isPresent() && !ShiftResolver.isFresh(open.get(), now, maxShift));
@@ -108,7 +109,12 @@ public class TodayService {
         }
         boolean hasPhoto = evidenceRepository.findByCompanyIdAndTimeEntryIdAndType(entry.getCompanyId(),
                 entry.getId(), EvidenceType.PHOTO).filter(e -> e.getStorageKey() != null).isPresent();
-        return new TodayResponse.EntrySummary(entry.getId(), entry.getServerTime(), entry.getStatus(),
+        // adjusted: the time shown is not the receipt time (corrected or typed in by an admin). An approval alone
+        // does not change the time, so it is not an adjustment for the employee.
+        boolean adjusted = entry.getSource() == TimeEntrySource.ADMIN
+                || !entry.getEffectiveTime().equals(entry.getServerTime());
+        return new TodayResponse.EntrySummary(entry.getId(), entry.getServerTime(), entry.getEffectiveTime(), adjusted,
+                entry.getStatus(),
                 entry.getReviewReasons(), entry.getDistanceMeters(), TimeEntryResponse.insideGeofence(entry),
                 entry.getLateMinutes(), hasPhoto);
     }

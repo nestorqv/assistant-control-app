@@ -6,7 +6,8 @@ import { useI18n } from '../i18n/useI18n'
 // The error is stored raw (not as text) so it is re-translated when the language changes.
 type State = { kind: 'loading' } | { kind: 'ok'; health: HealthResponse } | { kind: 'error'; error: unknown }
 
-export function HealthStatus() {
+/** `quiet`: no live region (the admin footer; the page already has its one status region). */
+export function HealthStatus({ quiet = false }: { quiet?: boolean }) {
   const { lang, t } = useI18n()
   const [state, setState] = useState<State>({ kind: 'loading' })
 
@@ -31,7 +32,7 @@ export function HealthStatus() {
   }
 
   return (
-    <p role="status" aria-live="polite">
+    <p role={quiet ? undefined : 'status'} aria-live={quiet ? undefined : 'polite'}>
       {state.kind === 'loading' && t('health.checking')}
       {state.kind === 'ok' &&
         t('health.online', {

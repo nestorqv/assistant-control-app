@@ -37,6 +37,8 @@ export const pwaOptions: Partial<VitePWAOptions> = {
     navigateFallback: 'index.html',
     // The service worker must never answer API calls with index.html.
     navigateFallbackDenylist: [/^\/api\//],
+    // The admin panel needs the network anyway: phones never download it.
+    globIgnores: ['**/admin-*.js', '**/admin-*.css'],
     cleanupOutdatedCaches: true,
     // sw.js must not call importScripts: it is served under Trusted Types (a TrustedScriptURL sink).
     inlineWorkboxRuntime: true,
@@ -53,7 +55,15 @@ export default defineConfig(({ mode }) => ({
     ...(mode === 'phone' ? [basicSsl()] : []),
     VitePWA(pwaOptions),
   ],
-  build: { assetsInlineLimit: 0 },
+  build: {
+    assetsInlineLimit: 0,
+    rolldownOptions: {
+      output: {
+        // Everything under src/admin and the admin texts form one lazy chunk (assets/admin-<hash>.js and .css).
+        codeSplitting: { groups: [{ name: 'admin', test: /[\\/]src[\\/](admin[\\/]|i18n[\\/]adminResources)/ }] },
+      },
+    },
+  },
   // The dev server has no CSP: React Refresh injects an inline script and Vite injects <style> tags.
   server: { port: 5173, strictPort: true, proxy: apiProxy, headers: DEV_HEADERS },
   preview: { proxy: apiProxy, headers: SECURITY_HEADERS },

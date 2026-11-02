@@ -1,5 +1,70 @@
 # Changelog
 
+## [2026-11-02]
+
+### Added (tests)
+- Stage 4a frontend tests (+76): `DashboardPage`, `EvidenceDialog`, `ReviewQueuePage`, `CreateEntryDialog`, `RequireAdmin`, plus the shared fake admin API `src/test/adminBackend.ts`.
+- Stage 4a backend tests (+10): `AdminTenantIsolationIntegrationTest` (another company's ids give 404 and write nothing), `ReviewConcurrencyIntegrationTest` (racing corrections/approvals give one 200 and one 409), `AdjustmentValuesIntegrationTest` (empty string vs SQL NULL, never `"null"`).
+- Test review #1 follow-ups: branch list tenant isolation (`AdminBranchIntegrationTest`), admin lock timeout 503 (`AdminLockTimeoutIntegrationTest`), V4 `effective_time` backfill (`V4BackfillMigrationTest`), admin landing after login, chunk-load error screen (`App.chunkError.test.tsx`), company time zone under a different browser zone (`companyZone.test.tsx`), 60 s auto-refresh, guard `next` redirect, backend "tú" check, same-day queue order, method-level admin mapping scan, fixed-clock demo day, queue date edge, and `dist/` checks that fail in CI when the build is missing.
+- Totals: backend 754 passing (2 skipped), frontend 757 passing (2 skipped) in 53 files. Test review #2: APPROVED.
+- Test review #2 follow-ups: `CreateEntryDialog` uses the server's real 400 for `INVALID_ENTRY_TIME`, the login-redirect test really checks backslashes, and the admin lock-timeout test has a 15 s `@Timeout` so it fails instead of hanging.
+
+### Security
+- Stage 4a security audit: APPROVED with 5 low findings (`securityAudit-report/stage-4a-admin-panel.md`). L-1, L-2 and L-4 are planned for 4b (plan amendment in `docs/plans/stage-4-admin-panel.md`); L-3 and L-5 are moved to Stage 5.
+
+### Fixed
+- Test harness: `CheckInClient.actor()` clears the photo directory of a brand-new tenant, so tests that reuse a company id in another embedded database no longer see old files.
+
+## [2026-10-30]
+
+### Fixed
+- Admin dashboard: a clock-in without a clock-out stays "en turno" for 16 h after the clock-in (overnight shifts included) and only then becomes "missing clock-out"; "Registrar salida" is no longer offered for a shift still in progress, and a past day's unfinished entry no longer shows "en turno" (code review #1).
+- Admin-created entries reject a `workDate` before today − 5 years or after today (400); the review queue's `from`/`to` have the same bounds.
+- `adjustment` rows no longer store the text `"null"`: an unknown old value is SQL `NULL`, an unknown new value is an empty string (the column is NOT NULL); the evidence history shows both as "—" (screen readers hear "sin valor / no value").
+- Review queue "Desde"/"Hasta" date filters are limited to today − 5 years … today (server date); out-of-range or half-typed dates no longer turn the list into an error.
+- Employee login hint now uses "usted" ("Use solo letras, números y guiones…"); the "tú" regression test also checks "usa".
+
+### Changed
+- Plan amendment: admin corrections and admin-created clock-outs use the same 16 h maximum shift as the employee app (no 24 h setting).
+
+## [2026-10-28]
+
+### Added
+
+- Stage 4 admin panel plan (`docs/plans/stage-4-admin-panel.md`): sub-stages 4a (dashboard, evidence viewer, review queue with `adjustment` audit rows, V4 migration), 4b (branches, employees, schedules) and 4c (Excel export with Apache POI).
+- **Stage 4a, backend.**
+  - Flyway `V4__admin_panel.sql` (all Stage 4 schema): `time_entry.effective_time` (NOT NULL, backfilled), source `ADMIN`, `adjustment.action` with CHECKs and an index, `branch.active`, the `audit_log` table and four triggers that make `adjustment` and `audit_log` append-only.
+  - `GET /api/admin/dashboard` (11 day statuses, 4 KPIs, branch filter, row cap), `GET /api/admin/review-queue` and `/count`, `GET /api/admin/time-entries/{id}` (the only response with exact coordinates), `POST .../approve | reject | correct`, `POST /api/admin/time-entries` (manual entry, no evidence), `GET /api/admin/branches`.
+  - Corrections change only `effective_time` (`server_time` and `work_date` never change); a corrected clock-in recomputes `late_minutes`; every action writes 1 to 3 `adjustment` rows in the same transaction; `expectedStatus` / `expectedEffectiveTime` give 409 `ENTRY_CHANGED`.
+  - Admin photo views write a `PHOTO_VIEW` `audit_log` row (own transaction) and are limited to 300 per 10 min per admin (checked before the lookup).
+  - `@EnableMethodSecurity` and `@PreAuthorize("hasRole('ADMIN')")` on every admin controller (reflection test).
+  - 14 new error codes in the three message bundles; review reasons `NO_GPS_ACCURACY` and `CLOCK_OUT_AFTER_SCHEDULE` (`app.time-entry.after-schedule-tolerance`, 60 min).
+  - Dev seed: 12 demo employees (1007-1012 added) and the opt-in `DEV_SEED_DEMO_DAY` that inserts today's blueprint entries (9 of 12 present, 2 late, 3 not clocked, 1 outside the area) with placeholder selfies.
+- **Stage 4a, frontend.**
+  - Lazy `admin` chunk (`src/admin`, texts in `src/i18n/adminResources.ts`), excluded from the service worker precache: `/admin` dashboard with date picker, KPI cards, attendance table (stacked list below 768 px) and an auto-refresh toggle; evidence dialog (photo on demand, facts, coordinates, Google Maps links opened only on click, adjustment history); review queue with approve, reject, correct time and undo; manual entries; PIN dialog on an expired token.
+  - `RequireAdmin` guard, administrator landing after login with a safe `next`, `apiBlob` and PUT/DELETE in the API client, chunk error boundary.
+  - Separate employee and admin bundle budgets in `bundleBudget.test.ts`.
+
+### Changed
+
+- Spanish copy is "usted" everywhere, also in the employee PWA and the consent text (about 70 keys in `resources.ts`); the Stage 3 tests that assert Spanish strings were updated, and a Unicode-aware regression test (`u` flag, because `\b` never matches after "ú") flags "tú" forms in the Spanish resources.
+- The employee PWA shows the effective time of an entry and a "Hora ajustada por su administrador" note when an administrator corrected or typed it; `GET /api/time-entries/today` entries gain `effectiveTime` and `adjusted`, and worked minutes use effective times.
+- The shift rules (`ShiftResolver`) read the typed time of admin-created entries, so a past-dated manual clock-in is never mistaken for today's open shift.
+- An accuracy under 1 m (or missing, with coordinates) is now a review reason (`NO_GPS_ACCURACY`); the old test that treated accuracy 0 as valid was updated.
+- The maximum shift for admin corrections is the existing `app.time-entry.max-shift-duration` (16 h); there is no separate admin setting.
+- `AppHeader` is not rendered on `/admin/*` (the panel has its own header); `HealthStatus` has a `quiet` mode for the admin footer; `ReauthDialog` / `ReauthController` accept optional texts.
+- The `AdminHome` placeholder was removed.
+
+### Fixed
+
+- `AccessDeniedException` from method security now returns the plain 403 (empty body) instead of the 500 of the catch-all handler.
+
+### Security
+
+- Two authorization layers on every `/api/admin/**` controller (URL rule plus `@PreAuthorize`), closing Stage 1 I-1.
+- Append-only `adjustment` and `audit_log` (repositories without update/delete plus database triggers); photo views audited and rate limited (Stage 2 L-6); admin writes lock the employee row first, then the entry, the same order as the PWA clock-in.
+- The map link is a plain external link built from numbers only, opened on click (Google Maps, the user's decision); nothing is embedded and the CSP is unchanged.
+
 ## [2026-10-27]
 
 ### Added

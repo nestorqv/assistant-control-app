@@ -61,7 +61,7 @@ describe('token expired with an entry waiting', () => {
     const user = userEvent.setup()
     renderApp('/')
 
-    const dialog = await screen.findByRole('dialog', { name: 'Ingresa tu PIN' })
+    const dialog = await screen.findByRole('dialog', { name: 'Ingrese su PIN' })
     expect(within(dialog).getByText('María Pérez')).toBeDefined()
     expect(within(dialog).getByText('DEMO')).toBeDefined()
     expect(within(dialog).getByText('1001')).toBeDefined()
@@ -88,7 +88,7 @@ describe('token expired with an entry waiting', () => {
     server({ login: () => problemResponse(401, 'INVALID_CREDENTIALS') })
     const user = userEvent.setup()
     renderApp('/')
-    const dialog = await screen.findByRole('dialog', { name: 'Ingresa tu PIN' })
+    const dialog = await screen.findByRole('dialog', { name: 'Ingrese su PIN' })
     await pressPin(user)
     await user.click(within(dialog).getByRole('button', { name: 'Ingresar' }))
 
@@ -106,7 +106,7 @@ describe('token expired with an entry waiting', () => {
     const { posts } = server({ login: () => jsonResponse(loginResponse({ token: 'intruder', employee: { ...loginResponse().employee, id: 99 } })) })
     const user = userEvent.setup()
     renderApp('/')
-    const dialog = await screen.findByRole('dialog', { name: 'Ingresa tu PIN' })
+    const dialog = await screen.findByRole('dialog', { name: 'Ingrese su PIN' })
     await pressPin(user)
     await user.click(within(dialog).getByRole('button', { name: 'Ingresar' }))
     expect((await within(dialog).findByRole('alert')).textContent).toContain('Código o PIN incorrectos')
@@ -120,12 +120,12 @@ describe('token expired with an entry waiting', () => {
     server()
     const user = userEvent.setup()
     renderApp('/')
-    const dialog = await screen.findByRole('dialog', { name: 'Ingresa tu PIN' })
+    const dialog = await screen.findByRole('dialog', { name: 'Ingrese su PIN' })
     await user.click(within(dialog).getByRole('button', { name: 'Más tarde' }))
     expect(screen.queryByRole('dialog')).toBeNull()
 
-    await user.click(screen.getByRole('button', { name: 'Ingresa tu PIN para enviar' }))
-    expect(await screen.findByRole('dialog', { name: 'Ingresa tu PIN' })).toBeDefined()
+    await user.click(screen.getByRole('button', { name: 'Ingrese su PIN para enviar' }))
+    expect(await screen.findByRole('dialog', { name: 'Ingrese su PIN' })).toBeDefined()
   })
 
   test('Escape closes it like "Más tarde" and focus returns to the page', async () => {
@@ -133,23 +133,23 @@ describe('token expired with an entry waiting', () => {
     await queueClockOut()
     server()
     renderApp('/')
-    const dialog = await screen.findByRole('dialog', { name: 'Ingresa tu PIN' })
+    const dialog = await screen.findByRole('dialog', { name: 'Ingrese su PIN' })
     dialog.dispatchEvent(new Event('cancel', { cancelable: true }))
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
     expect(getSession().needsReauth).toBe(true)
   })
 
-  test('"¿No eres tú?" opens the sign-out confirmation, which says the entry stays on the phone; confirming wipes the identity but keeps the entry', async () => {
+  test('"¿No es usted?" opens the sign-out confirmation, which says the entry stays on the phone; confirming wipes the identity but keeps the entry', async () => {
     await seedSession({ expiresAt: Date.now() - 1000 })
     await queueClockOut()
     const { logouts } = server()
     const user = userEvent.setup()
     renderApp('/')
-    const dialog = await screen.findByRole('dialog', { name: 'Ingresa tu PIN' })
-    await user.click(within(dialog).getByRole('button', { name: '¿No eres tú?' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Ingrese su PIN' })
+    await user.click(within(dialog).getByRole('button', { name: '¿No es usted?' }))
 
     const confirm = await screen.findByRole('dialog', { name: '¿Cerrar sesión?' })
-    expect(within(confirm).getByText('Tienes 1 marca sin enviar. Se queda guardada en este teléfono y se enviará cuando vuelvas a iniciar sesión.')).toBeDefined()
+    expect(within(confirm).getByText('Tiene 1 marca sin enviar. Se queda guardada en este teléfono y se enviará cuando vuelva a iniciar sesión.')).toBeDefined()
     await user.click(within(confirm).getByRole('button', { name: 'Cerrar sesión' }))
 
     await screen.findByRole('heading', { name: 'Iniciar sesión' })
@@ -177,7 +177,7 @@ describe('a 401 from the server', () => {
     const user = userEvent.setup()
     renderApp('/')
 
-    const dialog = await screen.findByRole('dialog', { name: 'Ingresa tu PIN' })
+    const dialog = await screen.findByRole('dialog', { name: 'Ingrese su PIN' })
     expect(posts).toHaveLength(1)
     expect(await listAll()).toHaveLength(1)
 
@@ -194,7 +194,7 @@ describe('cold open without a token', () => {
     await seedSession({ token: false })
     server()
     renderApp('/')
-    expect(await screen.findByRole('dialog', { name: 'Ingresa tu PIN' })).toBeDefined()
+    expect(await screen.findByRole('dialog', { name: 'Ingrese su PIN' })).toBeDefined()
   })
 
   test('offline, nothing opens and the screen works from the identity', async () => {

@@ -114,9 +114,16 @@ public class TimeEntryWriter {
                 branch.getLatitude(), branch.getLongitude())) : null;
         Integer accuracy = form.accuracy() != null ? (int) Math.round(form.accuracy()) : null;
 
+        boolean afterSchedule = false;
+        if (form.type() == TimeEntryType.CLOCK_OUT) {
+            WorkSchedule schedule = workScheduleRepository.findByCompanyIdAndEmployeeIdAndDayOfWeek(companyId,
+                    employee.getId(), workDate.getDayOfWeek().getValue()).orElse(null);
+            afterSchedule = LatenessCalculator.clockOutAfterSchedule(now, workDate, zone, schedule,
+                    props.afterScheduleTolerance());
+        }
         ReviewPolicy.Outcome outcome = ReviewPolicy.evaluate(new ReviewPolicy.Input(form.lat(), form.lng(),
                 form.accuracy(), distance, branch.getRadiusMeters(), now, form.deviceTime(), form.deviceSentAt(),
-                decision.shiftTooLong()), props.clockSkewTolerance(), props.maxGpsAccuracyMeters());
+                decision.shiftTooLong(), afterSchedule), props.clockSkewTolerance(), props.maxGpsAccuracyMeters());
 
         Integer lateMinutes = null;
         if (form.type() == TimeEntryType.CLOCK_IN) {

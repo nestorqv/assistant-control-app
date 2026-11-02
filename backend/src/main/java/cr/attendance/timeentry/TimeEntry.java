@@ -41,6 +41,11 @@ public class TimeEntry {
     @Column(name = "server_time", nullable = false)
     private Instant serverTime;
 
+    // The time that counts (worked time, lateness, payroll). Equals serverTime until an admin corrects it.
+    // serverTime itself is the receipt time and is never changed.
+    @Column(name = "effective_time", nullable = false)
+    private Instant effectiveTime;
+
     @Column(name = "device_time")
     private Instant deviceTime;
 
@@ -99,9 +104,40 @@ public class TimeEntry {
         this.branchId = branchId;
         this.type = type;
         this.serverTime = serverTime;
+        this.effectiveTime = serverTime;
         this.source = source;
         this.clientUuid = clientUuid;
         this.workDate = workDate;
+    }
+
+    /**
+     * An entry typed in by an admin: no device data, no evidence, VALID. serverTime is when the admin acted,
+     * effectiveTime is the time that was entered.
+     */
+    public static TimeEntry manual(Long companyId, Long employeeId, Long branchId, TimeEntryType type,
+            Instant serverTime, Instant effectiveTime, UUID clientUuid, LocalDate workDate, Integer lateMinutes) {
+        TimeEntry entry = new TimeEntry(companyId, employeeId, branchId, type, serverTime, TimeEntrySource.ADMIN,
+                clientUuid, workDate);
+        entry.effectiveTime = effectiveTime;
+        entry.lateMinutes = lateMinutes;
+        return entry;
+    }
+
+    /** Admin correction: only effective_time (and the lateness derived from it) changes. */
+    public void correctEffectiveTime(Instant newEffectiveTime, Integer newLateMinutes) {
+        this.effectiveTime = newEffectiveTime;
+        if (type == TimeEntryType.CLOCK_IN) {
+            this.lateMinutes = newLateMinutes;
+        }
+    }
+
+    public void changeStatus(TimeEntryStatus newStatus) {
+        this.status = newStatus;
+    }
+
+    /** The time ShiftResolver orders and ages entries by. An admin entry is stamped when the admin acted. */
+    public Instant sequenceTime() {
+        return source == TimeEntrySource.ADMIN ? effectiveTime : serverTime;
     }
 
     /** Device and review data, set once when the entry is created. */
@@ -144,6 +180,10 @@ public class TimeEntry {
 
     public Instant getServerTime() {
         return serverTime;
+    }
+
+    public Instant getEffectiveTime() {
+        return effectiveTime;
     }
 
     public Instant getDeviceTime() {

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
-import { Navigate, useNavigate } from 'react-router'
+import { Navigate, useNavigate, useSearchParams } from 'react-router'
 import { login } from '../api/auth'
 import type { LoginResponse } from '../api/types'
 import { getLastCompanyCode, signIn } from '../auth/session'
@@ -18,6 +18,15 @@ import { useI18n } from '../i18n/useI18n'
 import { listAll } from '../storage/outbox'
 
 const CODE_PATTERN = /^[A-Z0-9-]{1,20}$/
+
+/**
+ * Where an ADMIN lands after signing in: the requested admin page when it is a safe internal path
+ * (/admin or /admin/..., never // or a scheme, backslash or control character), otherwise /admin.
+ */
+export function safeAdminNext(raw: string | null): string {
+  const ok = raw !== null && /^\/admin(?:[/?#][^\\\x00-\x1f]*)?$/.test(raw) && !raw.startsWith('//')
+  return ok ? raw : '/admin'
+}
 
 export function LoginPage() {
   return (
@@ -46,6 +55,7 @@ function LoginForm() {
   const { t } = useI18n()
   const session = useSession()
   const navigate = useNavigate()
+  const next = useSearchParams()[0].get('next')
   const { announce } = useAnnouncer()
   const online = useOnline()
 
@@ -83,6 +93,7 @@ function LoginForm() {
 
   // An expired token is caught by the first request (401 opens the PIN dialog), not here.
   if (session.ready && session.token && !session.needsReauth && session.identity) {
+    if (session.identity.role === 'ADMIN') return <Navigate to={safeAdminNext(next)} replace />
     return <Navigate to={session.consentPending ? '/consent' : '/'} replace />
   }
 
@@ -105,7 +116,10 @@ function LoginForm() {
 
   async function finish(response: LoginResponse, codes: { companyCode: string; employeeCode: string }) {
     await signIn(response, codes)
-    navigate(response.employee.consentPending ? '/consent' : '/', { replace: true })
+    // An administrator is not sent to the consent screen: consent is only needed to clock in, and the clock
+    // screen asks for it when they open it.
+    if (response.employee.role === 'ADMIN') navigate(safeAdminNext(next), { replace: true })
+    else navigate(response.employee.consentPending ? '/consent' : '/', { replace: true })
   }
 
   async function submit(event?: FormEvent) {

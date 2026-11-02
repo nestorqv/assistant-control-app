@@ -67,4 +67,23 @@ class LatenessCalculatorTest {
         Instant at0815 = ZonedDateTime.of(dst, LocalTime.of(8, 15), ny).toInstant();
         assertThat(LatenessCalculator.lateMinutes(at0815, dst, ny, s)).isEqualTo(15);
     }
+
+    private static final java.time.Duration HOUR = java.time.Duration.ofMinutes(60);
+
+    @Test
+    void clockOutAfterScheduleUsesTheToleranceBoundary() {
+        WorkSchedule s = schedule("08:00", "17:00", 5);
+        assertThat(LatenessCalculator.clockOutAfterSchedule(at("18:00"), DAY, CR, s, HOUR)).isFalse();
+        assertThat(LatenessCalculator.clockOutAfterSchedule(at("18:01"), DAY, CR, s, HOUR)).isTrue();
+        assertThat(LatenessCalculator.clockOutAfterSchedule(at("18:01"), DAY, CR, null, HOUR)).isFalse();
+    }
+
+    @Test
+    void clockOutAfterScheduleIsOvernightAware() {
+        WorkSchedule night = schedule("22:00", "06:00", 5);
+        Instant nextDay0659 = ZonedDateTime.of(DAY.plusDays(1), LocalTime.of(6, 59), CR).toInstant();
+        Instant nextDay0701 = ZonedDateTime.of(DAY.plusDays(1), LocalTime.of(7, 1), CR).toInstant();
+        assertThat(LatenessCalculator.clockOutAfterSchedule(nextDay0659, DAY, CR, night, HOUR)).isFalse();
+        assertThat(LatenessCalculator.clockOutAfterSchedule(nextDay0701, DAY, CR, night, HOUR)).isTrue();
+    }
 }

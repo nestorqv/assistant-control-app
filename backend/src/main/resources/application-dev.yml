@@ -4,6 +4,8 @@ app:
     branch-latitude: ${DEV_SEED_LAT:}
     branch-longitude: ${DEV_SEED_LNG:}
     branch-radius-meters: ${DEV_SEED_RADIUS:}
+    # Opt-in: inserts today's mockup entries (see README). Off by default so you can clock in as 1001 yourself.
+    demo-day: ${DEV_SEED_DEMO_DAY:false}
 
 logging:
   level:

@@ -23,14 +23,14 @@ test('/ with a stored session renders the main screen', async () => {
   backend()
   renderApp('/')
   expect(await screen.findByRole('heading', { name: 'Hola, María' })).toBeDefined()
-  expect(await screen.findByText('Aún no has marcado hoy')).toBeDefined()
+  expect(await screen.findByText('Aún no ha marcado hoy')).toBeDefined()
 })
 
 test('a session with consent pending landing on / is redirected to /consent', async () => {
   await seedSession({ consentPending: true })
   backend()
   renderApp('/')
-  expect(await screen.findByRole('heading', { name: 'Tus datos y tu consentimiento' })).toBeDefined()
+  expect(await screen.findByRole('heading', { name: 'Sus datos y su consentimiento' })).toBeDefined()
 })
 
 test('/consent without a pending consent goes to the main screen', async () => {
@@ -53,18 +53,24 @@ test('/login with a valid session redirects to the main screen', async () => {
   expect(await screen.findByRole('heading', { name: 'Hola, María' })).toBeDefined()
 })
 
-test('/admin renders the placeholder and the health status', async () => {
+test('/admin without a session goes to the login page', async () => {
   backend()
   renderApp('/admin')
-  expect(await screen.findByRole('heading', { name: 'Panel del administrador' })).toBeDefined()
-  expect((await screen.findByRole('status')).textContent).toMatch(/Servidor en línea/)
+  expect(await screen.findByRole('heading', { name: 'Iniciar sesión' })).toBeDefined()
   expect(screen.queryByRole('heading', { name: /Hola/ })).toBeNull()
 })
 
-test('/admin/ with a trailing slash still renders admin', async () => {
+test('/admin/ with a trailing slash is guarded too', async () => {
   backend()
   renderApp('/admin/')
-  await screen.findByRole('heading', { name: 'Panel del administrador' })
+  await screen.findByRole('heading', { name: 'Iniciar sesión' })
+})
+
+test('an employee on /admin is sent to the main screen', async () => {
+  await seedSession()
+  backend()
+  renderApp('/admin')
+  expect(await screen.findByRole('heading', { name: 'Hola, María' })).toBeDefined()
 })
 
 test('unknown path renders not found with a link home', async () => {
@@ -79,10 +85,6 @@ test('English renders the same routes in English', async () => {
   const login = renderApp('/login', 'en')
   await screen.findByRole('heading', { name: 'Sign in' })
   login.unmount()
-
-  const admin = renderApp('/admin', 'en')
-  await screen.findByRole('heading', { name: 'Admin panel' })
-  admin.unmount()
 
   renderApp('/nowhere', 'en')
   await screen.findByText('Page not found')

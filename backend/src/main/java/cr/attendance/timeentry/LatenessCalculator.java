@@ -23,4 +23,18 @@ public final class LatenessCalculator {
         long minutesLate = Duration.between(scheduledStart, clockIn).toMinutes();
         return minutesLate <= schedule.getGraceMinutes() ? 0 : (int) minutesLate;
     }
+
+    /**
+     * True when the clock-out is later than the scheduled end plus the tolerance. Overnight-aware: an end that is
+     * not after the start belongs to the next calendar day. No schedule means nothing to compare with.
+     */
+    public static boolean clockOutAfterSchedule(Instant clockOut, LocalDate workDate, ZoneId zone,
+            WorkSchedule schedule, Duration tolerance) {
+        if (schedule == null) {
+            return false;
+        }
+        LocalDate endDate = schedule.getEndTime().isAfter(schedule.getStartTime()) ? workDate : workDate.plusDays(1);
+        Instant scheduledEnd = endDate.atTime(schedule.getEndTime()).atZone(zone).toInstant();
+        return clockOut.isAfter(scheduledEnd.plus(tolerance));
+    }
 }

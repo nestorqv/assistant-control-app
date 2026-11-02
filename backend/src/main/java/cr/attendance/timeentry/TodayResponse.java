@@ -22,7 +22,8 @@ public record TodayResponse(
         String timeZone,
         boolean consentPending) {
 
-    public record EntrySummary(Long id, Instant serverTime, TimeEntryStatus status, Set<ReviewReason> reviewReasons,
+    public record EntrySummary(Long id, Instant serverTime, Instant effectiveTime, boolean adjusted,
+            TimeEntryStatus status, Set<ReviewReason> reviewReasons,
             Integer distanceMeters, Boolean insideGeofence, Integer lateMinutes, boolean hasPhoto) {
     }
 

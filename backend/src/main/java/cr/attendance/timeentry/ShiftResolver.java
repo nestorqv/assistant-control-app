@@ -71,7 +71,9 @@ public final class ShiftResolver {
     }
 
     public static boolean isFresh(TimeEntry clockIn, Instant now, Duration max) {
-        return clockIn.getServerTime().isAfter(now.minus(max));
+        // sequenceTime: the receipt time, except for admin-created entries (typed time), so a past-dated admin
+        // CLOCK_IN is never mistaken for a shift that just started.
+        return clockIn.sequenceTime().isAfter(now.minus(max));
     }
 
     private static boolean isOpen(TimeEntry clockIn, Instant now, Duration max, LocalDate localToday) {
@@ -87,6 +89,6 @@ public final class ShiftResolver {
         return recent.stream()
                 .filter(e -> e.getType() == TimeEntryType.CLOCK_IN)
                 .filter(in -> !hasEntry(recent, TimeEntryType.CLOCK_OUT, in.getWorkDate()))
-                .sorted(Comparator.comparing(TimeEntry::getServerTime).reversed());
+                .sorted(Comparator.comparing(TimeEntry::sequenceTime).reversed());
     }
 }

@@ -2,12 +2,15 @@ package cr.attendance.timeentry;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
 
+/** Append-only (repository without update/delete, plus database triggers). One user action writes 1-3 rows. */
 @Entity
 @Table(name = "adjustment")
 public class Adjustment {
@@ -25,10 +28,14 @@ public class Adjustment {
     @Column(name = "admin_id", nullable = false)
     private Long adminId;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "action", nullable = false, length = 20)
+    private AdjustmentAction action;
+
     @Column(name = "reason", nullable = false, columnDefinition = "text")
     private String reason;
 
-    // Name of the changed field, e.g. "status" or "server_time".
+    // Name of the changed field: status, effective_time, late_minutes or entry (ck_adjustment_field).
     @Column(name = "field", nullable = false, columnDefinition = "text")
     private String field;
 
@@ -45,11 +52,12 @@ public class Adjustment {
     protected Adjustment() {
     }
 
-    public Adjustment(Long companyId, Long timeEntryId, Long adminId, String reason, String field,
-            String oldValue, String newValue, Instant createdAt) {
+    public Adjustment(Long companyId, Long timeEntryId, Long adminId, AdjustmentAction action, String reason,
+            String field, String oldValue, String newValue, Instant createdAt) {
         this.companyId = companyId;
         this.timeEntryId = timeEntryId;
         this.adminId = adminId;
+        this.action = action;
         this.reason = reason;
         this.field = field;
         this.oldValue = oldValue;
@@ -71,6 +79,10 @@ public class Adjustment {
 
     public Long getAdminId() {
         return adminId;
+    }
+
+    public AdjustmentAction getAction() {
+        return action;
     }
 
     public String getReason() {

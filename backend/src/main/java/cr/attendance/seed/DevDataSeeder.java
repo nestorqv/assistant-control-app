@@ -14,6 +14,7 @@ import java.time.LocalTime;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Profile;
@@ -54,6 +55,12 @@ public class DevDataSeeder implements ApplicationRunner {
         new Demo("1004", "Luis Mora", "Ventas", Role.EMPLOYEE, OFFICE_START, OFFICE_END),
         new Demo("1005", "Karla Solís", "Limpieza", Role.EMPLOYEE, LocalTime.of(6, 0), LocalTime.of(14, 0)),
         new Demo("1006", "Diego Arias", "Bodega", Role.EMPLOYEE, OFFICE_START, OFFICE_END),
+        new Demo("1007", "Marco Jiménez", "Ventas", Role.EMPLOYEE, OFFICE_START, OFFICE_END),
+        new Demo("1008", "Sofía Quesada", "Cajera", Role.EMPLOYEE, OFFICE_START, OFFICE_END),
+        new Demo("1009", "Andrés Castro", "Bodega", Role.EMPLOYEE, OFFICE_START, OFFICE_END),
+        new Demo("1010", "Lucía Herrera", "Ventas", Role.EMPLOYEE, OFFICE_START, OFFICE_END),
+        new Demo("1011", "Pablo Araya", "Bodega", Role.EMPLOYEE, OFFICE_START, OFFICE_END),
+        new Demo("1012", "Elena Brenes", "Limpieza", Role.EMPLOYEE, OFFICE_START, OFFICE_END),
         new Demo("9001", "Administrador Demo", "Administración", Role.ADMIN, OFFICE_START, OFFICE_END),
     };
 
@@ -65,6 +72,9 @@ public class DevDataSeeder implements ApplicationRunner {
     private final WorkScheduleRepository workScheduleRepository;
     private final PasswordEncoder passwordEncoder;
 
+    // Optional: DevSeedProfileTest builds the seeder by hand without it.
+    private DemoDayEntries demoDayEntries;
+
     public DevDataSeeder(Environment environment, SeedProperties props, CompanyRepository companyRepository,
             BranchRepository branchRepository, EmployeeRepository employeeRepository,
             WorkScheduleRepository workScheduleRepository, PasswordEncoder passwordEncoder) {
@@ -75,6 +85,11 @@ public class DevDataSeeder implements ApplicationRunner {
         this.employeeRepository = employeeRepository;
         this.workScheduleRepository = workScheduleRepository;
         this.passwordEncoder = passwordEncoder;
+    }
+
+    @Autowired(required = false)
+    void setDemoDayEntries(DemoDayEntries demoDayEntries) {
+        this.demoDayEntries = demoDayEntries;
     }
 
     @Override
@@ -93,21 +108,44 @@ public class DevDataSeeder implements ApplicationRunner {
         }
         validateLocation();
         Optional<Company> existing = companyRepository.findByCode(DEMO_COMPANY_CODE);
+        Company company;
         if (existing.isPresent()) {
-            updateBranchLocation(existing.get());
-            log.info("Dev seed already present");
-            return;
+            company = existing.get();
+            updateBranchLocation(company);
+            int added = ensureEmployees(company, pin);
+            log.info(added > 0 ? "Dev seed already present; added {} missing demo employees" : "Dev seed already present",
+                    added);
+        } else {
+            company = companyRepository.save(new Company(DEMO_COMPANY_CODE, "Empresa Demo"));
+            // San José coordinates unless DEV_SEED_LAT / DEV_SEED_LNG / DEV_SEED_RADIUS say otherwise.
+            branchRepository.save(new Branch(company.getId(), BRANCH_NAME,
+                    props.branchLatitude() != null ? props.branchLatitude() : DEFAULT_LATITUDE,
+                    props.branchLongitude() != null ? props.branchLongitude() : DEFAULT_LONGITUDE,
+                    props.branchRadiusMeters() != null ? props.branchRadiusMeters() : DEFAULT_RADIUS));
+            ensureEmployees(company, pin);
+            log.info("Dev seed created: company DEMO, 13 employees (codes 1001-1012, 9001)");
         }
+        if (Boolean.TRUE.equals(props.demoDay()) && demoDayEntries != null) {
+            demoDayEntries.ensureToday(company);
+        }
+    }
 
-        Company company = companyRepository.save(new Company(DEMO_COMPANY_CODE, "Empresa Demo"));
-        // San José coordinates unless DEV_SEED_LAT / DEV_SEED_LNG / DEV_SEED_RADIUS say otherwise.
-        Branch branch = branchRepository.save(new Branch(company.getId(), BRANCH_NAME,
-                props.branchLatitude() != null ? props.branchLatitude() : DEFAULT_LATITUDE,
-                props.branchLongitude() != null ? props.branchLongitude() : DEFAULT_LONGITUDE,
-                props.branchRadiusMeters() != null ? props.branchRadiusMeters() : DEFAULT_RADIUS));
-        String pinHash = passwordEncoder.encode(pin);
-
+    /** Creates the demo employees that are missing. Existing rows and their PINs are never changed. */
+    private int ensureEmployees(Company company, String pin) {
+        Branch branch = branchRepository.findAllByCompanyIdOrderByName(company.getId()).stream()
+                .filter(b -> BRANCH_NAME.equals(b.getName())).findFirst().orElse(null);
+        if (branch == null) {
+            return 0;
+        }
+        String pinHash = null;
+        int added = 0;
         for (Demo demo : DEMO_EMPLOYEES) {
+            if (employeeRepository.findByCompanyIdAndCode(company.getId(), demo.code()).isPresent()) {
+                continue;
+            }
+            if (pinHash == null) {
+                pinHash = passwordEncoder.encode(pin);
+            }
             Long branchId = demo.role() == Role.ADMIN ? null : branch.getId();
             Employee employee = employeeRepository.save(new Employee(company.getId(), branchId, demo.code(),
                     demo.name(), demo.jobTitle(), pinHash, demo.role()));
@@ -115,8 +153,9 @@ public class DevDataSeeder implements ApplicationRunner {
                 workScheduleRepository.save(new WorkSchedule(company.getId(), employee.getId(), day, demo.start(),
                         demo.end(), 5));
             }
+            added++;
         }
-        log.info("Dev seed created: company DEMO, 7 employees (codes 1001-1006, 9001)");
+        return added;
     }
 
     private void validateLocation() {

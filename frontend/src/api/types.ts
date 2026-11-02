@@ -5,6 +5,7 @@ export type Role = 'EMPLOYEE' | 'ADMIN'
 export type NextAction = 'CLOCK_IN' | 'CLOCK_OUT' | 'NONE'
 export type TimeEntryType = 'CLOCK_IN' | 'CLOCK_OUT'
 export type TimeEntryStatus = 'VALID' | 'PENDING_REVIEW' | 'REJECTED'
+export type TimeEntrySource = 'MOBILE' | 'TABLET' | 'QR' | 'ADMIN'
 export type ReviewReason =
   | 'NO_GPS'
   | 'OUTSIDE_GEOFENCE'
@@ -12,6 +13,8 @@ export type ReviewReason =
   | 'SYNCED_LATE'
   | 'DEVICE_CLOCK_AHEAD'
   | 'SHIFT_TOO_LONG'
+  | 'NO_GPS_ACCURACY'
+  | 'CLOCK_OUT_AFTER_SCHEDULE'
 export type BlockedReason = 'CONSENT_REQUIRED' | 'NO_BRANCH_ASSIGNED'
 
 // auth/LoginResponse.java
@@ -30,6 +33,10 @@ export type TimeResponse = { serverTime: string; epochMillis: number; timeZone: 
 export type EntrySummary = {
   id: number
   serverTime: string
+  /** The time that counts; differs from serverTime after an admin correction. */
+  effectiveTime: string
+  /** The time shown was corrected or typed in by an administrator. */
+  adjusted: boolean
   status: TimeEntryStatus
   reviewReasons: ReviewReason[]
   distanceMeters: number | null
@@ -79,4 +86,6 @@ export type TimeEntryResponse = {
 export type EntryOutcome = Pick<
   EntrySummary,
   'status' | 'reviewReasons' | 'distanceMeters' | 'insideGeofence' | 'lateMinutes' | 'serverTime'
->
+> &
+  // A POST response has neither: it is the receipt of a brand new entry.
+  Partial<Pick<EntrySummary, 'effectiveTime' | 'adjusted'>>

@@ -30,6 +30,10 @@ public class Branch {
     @Column(name = "radius_meters", nullable = false)
     private Integer radiusMeters = 100;
 
+    // Retired branches stay for history (entries reference them). Managed in Stage 4b.
+    @Column(name = "active", nullable = false)
+    private boolean active = true;
+
     protected Branch() {
     }
 
@@ -59,6 +63,10 @@ public class Branch {
 
     public Double getLongitude() {
         return longitude;
+    }
+
+    public boolean isActive() {
+        return active;
     }
 
     public Integer getRadiusMeters() {

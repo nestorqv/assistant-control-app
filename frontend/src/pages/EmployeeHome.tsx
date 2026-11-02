@@ -220,6 +220,7 @@ function HomeContent() {
       status: outcome?.status ?? null,
       reasonLabels: reasonLabels(outcome?.reviewReasons ?? []),
       lateMinutes: type === 'CLOCK_IN' ? (outcome?.lateMinutes ?? null) : null,
+      adjusted: outcome?.adjusted === true,
     }
   }
 

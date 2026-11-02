@@ -75,7 +75,7 @@ class DevSeedLocationTest {
         assertThat(((Number) updated.get("latitude")).doubleValue()).isEqualTo(9.75);
         assertThat(((Number) updated.get("longitude")).doubleValue()).isEqualTo(-84.5);
         assertThat(((Number) updated.get("radius_meters")).intValue()).isEqualTo(400);
-        assertThat(jdbc.queryForObject("select count(*) from employee", Integer.class)).isEqualTo(7);
+        assertThat(jdbc.queryForObject("select count(*) from employee", Integer.class)).isEqualTo(13);
 
         assertThat(output.getAll()).contains("Dev seed: branch location updated")
                 .doesNotContain(SEED_PIN);

@@ -10,7 +10,17 @@ import { LogoutConfirm } from './LogoutConfirm'
 import { ReauthDialog } from './ReauthDialog'
 
 /** Mounted only while the PIN dialog is open. A PIN for a different employee is treated as wrong credentials. */
-export function ReauthController({ onClose }: { onClose: () => void }) {
+export function ReauthController({
+  onClose,
+  title,
+  body,
+  doneMessage,
+}: {
+  onClose: () => void
+  title?: string
+  body?: string
+  doneMessage?: string
+}) {
   const { t } = useI18n()
   const { identity } = useSession()
   const { announce } = useAnnouncer()
@@ -29,7 +39,7 @@ export function ReauthController({ onClose }: { onClose: () => void }) {
     try {
       const response = await login(identity.companyCode, identity.employeeCode, pin)
       if (!reauthenticated(response)) throw new ApiProblem(401, 'INVALID_CREDENTIALS')
-      announce(t('announce.sessionRestored'))
+      announce(doneMessage ?? t('announce.sessionRestored'))
       onClose()
     } catch (error) {
       setErrorText(describeError(error, t))
@@ -52,6 +62,8 @@ export function ReauthController({ onClose }: { onClose: () => void }) {
       onSubmit={(pin) => void submit(pin)}
       onLater={onClose}
       onNotYou={() => setNotYou(true)}
+      title={title}
+      body={body}
     />
   )
 }

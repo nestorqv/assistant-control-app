@@ -4,6 +4,7 @@ import { describe, expect, test, vi } from 'vitest'
 import { getSession } from '../auth/session'
 import { enqueue, listAll } from '../storage/outbox'
 import { baselineJpegBytes, entrySummary, jsonResponse, loginResponse, problemResponse, today } from '../test/fixtures'
+import { adminBackend } from '../test/adminBackend'
 import { renderApp, seedSession, stubFetch } from '../test/appHarness'
 
 const PIN = '48207315'
@@ -71,8 +72,8 @@ describe('the form', () => {
     const company = screen.getByLabelText('Código de empresa')
     expect(document.activeElement).toBe(company)
     expect(company.getAttribute('aria-invalid')).toBe('true')
-    expect(screen.getByText('Escribe tu código de empresa.')).toBeDefined()
-    expect(screen.getByText('Usa solo letras, números y guiones (máximo 20).')).toBeDefined()
+    expect(screen.getByText('Escriba su código de empresa.')).toBeDefined()
+    expect(screen.getByText('Use solo letras, números y guiones (máximo 20).')).toBeDefined()
     expect(mock.mock.calls.some(([url]) => String(url) === '/api/auth/login')).toBe(false)
   })
 })
@@ -114,7 +115,7 @@ describe('signing in', () => {
     await fillCodes(user)
     await pressPin(user, PIN)
     await user.click(submit())
-    await screen.findByRole('heading', { name: 'Tus datos y tu consentimiento' })
+    await screen.findByRole('heading', { name: 'Sus datos y su consentimiento' })
   })
 
   test('the PIN is not in any storage after signing in', async () => {
@@ -139,7 +140,7 @@ describe('failures', () => {
     await user.click(submit())
 
     const alert = await screen.findByRole('alert')
-    expect(alert.textContent).toBe('Código o PIN incorrectos. Si fallaste varias veces, espera 15 minutos o contacta a tu administrador.')
+    expect(alert.textContent).toBe('Código o PIN incorrectos. Si falló varias veces, espere 15 minutos o contacte a su administrador.')
     expect(document.activeElement).toBe(alert)
     expect(filledDots()).toBe(0)
     expect((screen.getByLabelText('Código de empresa') as HTMLInputElement).value).toBe('DEMO')
@@ -179,7 +180,7 @@ describe('failures', () => {
     await fillCodes(user)
     await pressPin(user, PIN)
     await user.click(submit())
-    expect((await screen.findByRole('alert')).textContent).toBe('No se pudo conectar con el servidor. Revisa tu conexión e inténtalo de nuevo.')
+    expect((await screen.findByRole('alert')).textContent).toBe('No se pudo conectar con el servidor. Revise su conexión e inténtelo de nuevo.')
     expect(filledDots()).toBe(0)
   })
 
@@ -205,7 +206,7 @@ describe('offline', () => {
     backend(() => jsonResponse(loginResponse()))
     const user = userEvent.setup()
     renderApp('/login')
-    expect(await screen.findByText('Necesitas conexión a internet para iniciar sesión.')).toBeDefined()
+    expect(await screen.findByText('Necesita conexión a internet para iniciar sesión.')).toBeDefined()
     await fillCodes(user)
     await pressPin(user, PIN)
     expect(submit().getAttribute('aria-disabled')).toBe('true')
@@ -265,4 +266,50 @@ describe('one identity per device', () => {
     expect(screen.queryByRole('dialog')).toBeNull()
     expect(getSession().identity?.employeeId).toBe(7)
   })
+})
+
+describe('an administrator signing in', () => {
+  const adminLogin = () =>
+    jsonResponse(
+      loginResponse({
+        employee: { id: 9, name: 'Ana Mora', jobTitle: 'Administración', role: 'ADMIN', consentPending: true },
+      }),
+    )
+
+  async function signInAsAdmin(path: string) {
+    const user = userEvent.setup()
+    renderApp(path)
+    await fillCodes(user, 'demo', '9001')
+    await pressPin(user, PIN)
+    await user.click(submit())
+  }
+
+  test('lands on the page in ?next even when the consent is pending, and never on /consent', async () => {
+    adminBackend({ login: adminLogin })
+    await signInAsAdmin('/login?next=/admin/review')
+    expect(await screen.findByRole('heading', { level: 1, name: 'Revisión de marcas' })).toBeDefined()
+    expect(screen.queryByRole('heading', { name: 'Sus datos y su consentimiento' })).toBeNull()
+  })
+
+  test('an external or protocol-relative ?next is ignored and the dashboard opens', async () => {
+    adminBackend({ login: adminLogin })
+    await signInAsAdmin('/login?next=' + encodeURIComponent('//evil.example'))
+    expect(await screen.findByRole('heading', { level: 1, name: 'Asistencia de hoy' })).toBeDefined()
+  })
+
+  test('without ?next the dashboard opens', async () => {
+    adminBackend({ login: adminLogin })
+    await signInAsAdmin('/login')
+    expect(await screen.findByRole('heading', { level: 1, name: 'Asistencia de hoy' })).toBeDefined()
+  })
+})
+
+test('safeAdminNext only accepts internal admin paths', async () => {
+  const { safeAdminNext } = await import('./LoginPage')
+  expect(safeAdminNext('/admin/review')).toBe('/admin/review')
+  expect(safeAdminNext('/admin')).toBe('/admin')
+  expect(safeAdminNext('/admin?date=2026-10-07')).toBe('/admin?date=2026-10-07')
+  for (const bad of ['//evil.example', 'https://evil.example/admin', '/', '/administrator', '/admin/\\evil.example', '/admin\\\\evil','/employees', null, '']) {
+    expect(safeAdminNext(bad)).toBe('/admin')
+  }
 })

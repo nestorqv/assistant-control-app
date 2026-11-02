@@ -64,9 +64,18 @@ app:
     clock-skew-tolerance: 2m
     lock-timeout: 5s            # how long a POST waits for the employee row lock (PostgreSQL lock_timeout)
     max-gps-accuracy-meters: 100
+    after-schedule-tolerance: 60m   # clock-out later than the scheduled end + this goes to review
     rate-limit:
       max-attempts: 30
       window: 10m
+
+  admin:
+    max-dashboard-rows: 1000
+    # The longest shift an admin may enter or correct is app.time-entry.max-shift-duration (16h), as in the PWA.
+    rate-limit:                  # per admin
+      photo: {max-attempts: 300, window: 10m}
+      export: {max-attempts: 10, window: 10m}
+      account: {max-attempts: 30, window: 10m}
 
 server:
   port: 8080

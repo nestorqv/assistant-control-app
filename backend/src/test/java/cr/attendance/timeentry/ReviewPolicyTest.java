@@ -127,4 +127,21 @@ class ReviewPolicyTest {
         ReviewPolicy.Outcome o = good(Instant.parse("2099-12-31T00:00:00Z"), null);
         assertThat(o.skewSeconds()).isLessThan(0);
     }
+
+    @Test
+    void coordinatesWithoutAUsableAccuracyAreFlagged() {
+        assertThat(eval(9.9, -84.0, null, 35, SERVER, null, false).reasons())
+                .containsExactly(ReviewReason.NO_GPS_ACCURACY);
+        assertThat(eval(9.9, -84.0, 0.4, 35, SERVER, null, false).reasons())
+                .containsExactly(ReviewReason.NO_GPS_ACCURACY);
+        assertThat(eval(9.9, -84.0, 1.0, 35, SERVER, null, false).reasons()).isEmpty();
+    }
+
+    @Test
+    void aClockOutLongAfterTheScheduleIsFlagged() {
+        ReviewPolicy.Outcome o = ReviewPolicy.evaluate(new ReviewPolicy.Input(9.9, -84.0, 10.0, 35, 100, SERVER,
+                SERVER, null, false, true), TOLERANCE, 100);
+        assertThat(o.reasons()).containsExactly(ReviewReason.CLOCK_OUT_AFTER_SCHEDULE);
+        assertThat(o.status()).isEqualTo(TimeEntryStatus.PENDING_REVIEW);
+    }
 }

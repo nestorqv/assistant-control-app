@@ -13,7 +13,7 @@ Roadmap: [plans/00-roadmap.md](plans/00-roadmap.md)
 | 1b - English naming + EN/ES | Done | 2026-10-22 | 2026-10-22 |
 | 2 - Check-in API | Done | 2026-10-22 | 2026-10-26 |
 | 3 - Employee PWA | Done (real-phone check deferred) | 2026-10-26 | 2026-10-28 |
-| 4 - Admin panel | Not started | | |
+| 4 - Admin panel | In progress | 2026-10-28 | |
 | 5 - Hardening + deploy | Not started | | |
 
 ## Stage 0 - Foundation
@@ -131,11 +131,29 @@ Branch: `stage1-2`. Inventory: [naming-inventory.md](naming-inventory.md)
 
 ## Stage 4 - Admin panel
 
-- [ ] Stage plan written + open questions answered
-- [ ] UI design (designer)
-- [ ] Dashboard: KPI cards + employee table
-- [ ] Evidence viewer
-- [ ] Review queue with `ajuste` audit rows
+- [x] Stage plan written (`docs/plans/stage-4-admin-panel.md`; split 4a dashboard/evidence/review, 4b management, 4c Excel export) - 2026-10-28
+- [x] Open questions answered (14): defaults for 1-5 and 7-13; Q6 Google Maps link (on click only); Q14 "usted" everywhere, incl. converting the PWA texts - 2026-10-28
+- [x] Plan updated with the answers ("Open Questions: RESOLVED" section) - 2026-10-28
+- [x] Architect: `docs/diagrams/stage-4-admin-panel.md` (V4 ER, layers, dashboard/review/evidence/export sequences); 12 coder notes on plan-vs-code gaps - 2026-10-28
+- [x] UI design (designer): `docs/design/stage-4-admin-panel.md` — chip tokens (AA verified), responsive shell, all 4a/4b/4c screens, 39 components, "tú"→"usted" table for the PWA, 20 plan conflicts with resolutions (adopted) - 2026-10-28
+- [x] Coder: Stage 4a (dashboard, evidence viewer, review queue, admin-created entries, photo-view audit, V4 migration, demo seed, "usted" conversion); re-verified frontend lint + build + 665 tests (45 files), no admin chunk in SW precache; backend 731 tests, 0 failures, 2 skipped - 2026-10-29
+- [x] 4a code review #1: REJECTED — 1 Medium (overnight shift shown as missing clock-out next day), 5 Low ("Usa" still tú, 16 h vs 24 h → plan amended to 16 h, past pending shown "en turno", unbounded past workDate, "null" text in adjustment) - 2026-10-30
+- [x] 4a coder fixes (cycle 1): backend 737 tests, frontend 666 tests, lint + build pass - 2026-10-30
+- [x] 4a code review #2: APPROVED — all 6 findings fixed; 2 new Low (empty string for unknown new lateness, review-queue date inputs lack min/max) + stale diagram line (fixed) - 2026-10-30
+- [x] 4a small fixes: review-queue date inputs min/max; unknown history values shown as "—" (user decision: keep empty string in `new_value`); frontend 668 tests, lint + build pass - 2026-10-30
+- [x] 4a tester (2026-11-02): +76 frontend, +10 backend tests; backend 747 passing (2 skipped), frontend 744 passing; no production bugs
+- [x] 4a security audit (2026-11-02): APPROVED, 0 critical/high/medium, 5 low (`securityAudit-report/stage-4a-admin-panel.md`)
+- [x] 4a test review #1 (2026-11-02): REJECTED, 15 findings (1 high, 4 medium, 10 low)
+- [x] 4a tester fixes cycle 1 (2026-11-02): all 15 findings covered; backend 754 passing (2 skipped), frontend 757 passing (2 skipped); no production bugs
+- [x] 4a test review #2 (2026-11-02): APPROVED, 15/15 fixed; 3 new low findings open (422→400 in `CreateEntryDialog.test.tsx`, backslash case in `safeAdminNext` test, `@Timeout` on lock-timeout test)
+- [x] Open findings decided (2026-11-02, user): fix the 3 low test findings now; security L-1/L-2/L-4 in 4b (plan amendment); L-3/L-5 → Stage 5
+- [x] 4a tester: 3 low test findings fixed (2026-11-02); backend 754 passing (2 skipped), frontend 757 passing (2 skipped)
+- [x] 4a manual test by user in the browser - 2026-11-02
+- [x] 4a commit - 2026-11-02
+- [x] Dashboard: KPI cards + employee table (4a, 2026-11-02)
+- [x] Evidence viewer (4a, 2026-11-02)
+- [x] Review queue with `ajuste` audit rows (4a, 2026-11-02)
+- [ ] 4b: security L-1 (invisible characters in reasons), L-2 (entry-detail location rate limit + audit), L-4 (admin write rate limit)
 - [ ] CRUD sucursales / empleados / horarios
 - [ ] Excel export (Apache POI)
 - [ ] Tests pass
@@ -148,6 +166,8 @@ Branch: `stage1-2`. Inventory: [naming-inventory.md](naming-inventory.md)
 - [ ] Stage 1 audit M-3: replace hard 15-min lock with growing delays (1 s → ~1 min) + admin alert
 - [ ] Stage 2 audit M-2: update JDK 25 (local is 25.0.1, kept by user decision 2026-10-23) and pin a patched JDK for production
 - [ ] Stage 2 audit L-6: log and rate-limit photo access
+- [ ] Stage 4a audit L-3: separate migration DB user; runtime user only SELECT/INSERT on `adjustment` and `audit_log`
+- [ ] Stage 4a audit L-5: non-breaking `npm audit fix` for dev-tool advisories (never downgrade `vite-plugin-pwa`)
 - [ ] Spring Boot 3.5 → 4.x migration (3.5 OSS support ended 2026-06-30)
 - [ ] Photo retention job
 - [ ] VPS deploy: native PostgreSQL + Caddy HTTPS

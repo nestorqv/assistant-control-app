@@ -43,7 +43,7 @@ describe('sign out', () => {
     const user = userEvent.setup()
     renderApp('/')
     const dialog = await openConfirm(user)
-    expect(within(dialog).getByText('Tendrás que ingresar tu PIN de nuevo.')).toBeDefined()
+    expect(within(dialog).getByText('Tendrá que ingresar su PIN de nuevo.')).toBeDefined()
     expect(logouts).toEqual([])
     expect(document.activeElement).toBe(within(dialog).getByRole('button', { name: 'Cancelar' }))
 
@@ -87,7 +87,7 @@ describe('sign out', () => {
     renderApp('/')
     const dialog = await openConfirm(user)
     expect(dialog.getAttribute('role')).not.toBe('alertdialog')
-    expect(within(dialog).getByText('Tienes 1 marca sin enviar. Se queda guardada en este teléfono y se enviará cuando vuelvas a iniciar sesión.')).toBeDefined()
+    expect(within(dialog).getByText('Tiene 1 marca sin enviar. Se queda guardada en este teléfono y se enviará cuando vuelva a iniciar sesión.')).toBeDefined()
     expect(document.activeElement).toBe(within(dialog).getByRole('button', { name: 'Cancelar' }))
     expect(await listAll()).toHaveLength(1)
 

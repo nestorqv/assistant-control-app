@@ -12,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -59,6 +60,14 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(ResourceNotFoundException.class)
     ResponseEntity<ProblemDetail> notFound() {
         return respond(HttpStatus.NOT_FOUND, ErrorCode.NOT_FOUND, null);
+    }
+
+    // Method security (@PreAuthorize) throws inside the controller, where MVC resolves it before the security
+    // filter sees it. Without this handler the catch-all below would turn a denial into a 500. Same plain 403
+    // (empty body) as the URL layer.
+    @ExceptionHandler(AccessDeniedException.class)
+    ResponseEntity<Void> accessDenied() {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
     }
 
     // Last resort: a fixed 500 body instead of the Boot error page (which echoes the request path).

@@ -23,7 +23,7 @@ public record TimeEntryResponse(
         boolean replayed) {
 
     /** Inside means within the radius and with an acceptable accuracy; null when no position was sent. */
-    static Boolean insideGeofence(TimeEntry entry) {
+    public static Boolean insideGeofence(TimeEntry entry) {
         if (entry.getLatitude() == null) {
             return null;
         }

@@ -36,6 +36,9 @@ export function entrySummary(over: Partial<EntrySummary> = {}): EntrySummary {
   return {
     id: 1,
     serverTime: '2026-10-07T13:58:00Z',
+    // Follows the receipt time unless a test says the time was corrected.
+    effectiveTime: over.serverTime ?? '2026-10-07T13:58:00Z',
+    adjusted: false,
     status: 'VALID',
     reviewReasons: [],
     distanceMeters: 35,

@@ -87,8 +87,8 @@ class SchemaMigrationTest {
         long employeeId = data.employee(t.companyId(), t.branchId(), "EMPLOYEE");
 
         String timeEntrySql = """
-                insert into time_entry (company_id, employee_id, branch_id, type, source, status, client_uuid, work_date)
-                values (?, ?, ?, 'CLOCK_IN', ?, ?, ?, current_date)
+                insert into time_entry (effective_time, company_id, employee_id, branch_id, type, source, status, client_uuid, work_date)
+                values (now(), ?, ?, ?, 'CLOCK_IN', ?, ?, ?, current_date)
                 """;
         assertThatThrownBy(() -> jdbc.update(timeEntrySql, t.companyId(), employeeId, t.branchId(),
                 "FAX", "VALID", UUID.randomUUID())).isInstanceOf(DataIntegrityViolationException.class);
@@ -111,8 +111,8 @@ class SchemaMigrationTest {
         long employeeId = data.employee(t.companyId(), t.branchId(), "EMPLOYEE");
         UUID uuid = UUID.randomUUID();
         String sql = """
-                insert into time_entry (company_id, employee_id, branch_id, type, source, client_uuid, work_date)
-                values (?, ?, ?, 'CLOCK_IN', 'MOBILE', ?, ?)
+                insert into time_entry (effective_time, company_id, employee_id, branch_id, type, source, client_uuid, work_date)
+                values (now(), ?, ?, ?, 'CLOCK_IN', 'MOBILE', ?, ?)
                 """;
         jdbc.update(sql, t.companyId(), employeeId, t.branchId(), uuid, LocalDate.now());
         // A different work_date, so only the client_uuid key can reject the second insert.
@@ -154,12 +154,12 @@ class SchemaMigrationTest {
         long employeeId = data.employee(t.companyId(), t.branchId(), "EMPLOYEE");
         long timeEntryId = data.timeEntry(t.companyId(), employeeId, t.branchId());
         jdbc.update("""
-                insert into adjustment (company_id, time_entry_id, admin_id, reason, field, old_value, new_value)
-                values (?, ?, ?, 'Olvido marcar', 'server_time', null, '2026-10-21T14:00:00Z')
+                insert into adjustment (company_id, time_entry_id, admin_id, action, reason, field, old_value, new_value)
+                values (?, ?, ?, 'APPROVE', 'Olvido marcar', 'effective_time', null, '2026-10-21T14:00:00Z')
                 """, t.companyId(), timeEntryId, adminId);
         assertThatThrownBy(() -> jdbc.update("""
-                insert into adjustment (company_id, time_entry_id, admin_id, reason, field, new_value)
-                values (?, ?, ?, 'x', null, 'y')
+                insert into adjustment (company_id, time_entry_id, admin_id, action, reason, field, new_value)
+                values (?, ?, ?, 'APPROVE', 'x', null, 'y')
                 """, t.companyId(), timeEntryId, adminId)).isInstanceOf(DataIntegrityViolationException.class);
     }
 }

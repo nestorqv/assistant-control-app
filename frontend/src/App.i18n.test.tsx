@@ -7,16 +7,15 @@ import { renderApp, seedSession, stubFetch } from './test/appHarness'
 
 const health = { status: 'UP', service: 'attendance-backend', serverTime: '2026-10-13T18:00:00Z' }
 
-test('switching language re-translates the page, the health status and the document', async () => {
+test('switching language re-translates the page and the document', async () => {
   stubFetch((url) => (url === '/api/health' ? jsonResponse(health) : undefined))
   const user = userEvent.setup()
-  renderApp('/admin')
-  await screen.findByText(/Servidor en línea/)
+  renderApp('/login')
+  await screen.findByRole('heading', { name: 'Iniciar sesión' })
 
   await user.click(screen.getByRole('button', { name: 'English' }))
 
-  expect(screen.getByRole('heading', { name: 'Admin panel' })).toBeDefined()
-  expect(screen.getByRole('status').textContent).toMatch(/Server online \(UP\) - 10\/13\/2026, 12:00/)
+  expect(screen.getByRole('heading', { name: 'Sign in' })).toBeDefined()
   expect(document.documentElement.lang).toBe('en')
   expect(document.title).toBe('Attendance Control')
 })
@@ -26,22 +25,13 @@ test('the main screen re-translates on a language switch', async () => {
   stubFetch((url) => (url === '/api/time-entries/today' ? jsonResponse(today()) : undefined))
   const user = userEvent.setup()
   renderApp('/')
-  await screen.findByText('Aún no has marcado hoy')
+  await screen.findByText('Aún no ha marcado hoy')
 
   await user.click(screen.getByRole('button', { name: 'English' }))
 
   expect(screen.getByRole('heading', { name: 'Hello, María' })).toBeDefined()
   expect(screen.getByText("You haven't clocked in today")).toBeDefined()
   expect(screen.getByRole('button', { name: 'Clock in' })).toBeDefined()
-})
-
-test('an error shown by the health status is re-translated on a language switch', async () => {
-  stubFetch(() => new Response('boom', { status: 503 }))
-  const user = userEvent.setup()
-  renderApp('/admin')
-  await screen.findByText('No se pudo contactar al servidor: HTTP 503')
-  await user.click(screen.getByRole('button', { name: 'English' }))
-  expect(screen.getByRole('status').textContent).toBe('Could not reach the server: HTTP 503')
 })
 
 test('the choice survives a reload (stored value wins on the next initLanguage)', async () => {

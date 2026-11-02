@@ -3,10 +3,13 @@ package cr.attendance.db;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import cr.attendance.common.AuditAction;
+import cr.attendance.common.AuditTargetType;
 import cr.attendance.common.Role;
 import cr.attendance.employee.EmployeeRepository;
 import cr.attendance.support.IntegrationTest;
 import cr.attendance.support.TestData;
+import cr.attendance.timeentry.AdjustmentAction;
 import cr.attendance.timeentry.EvidenceRepository;
 import cr.attendance.timeentry.EvidenceType;
 import cr.attendance.timeentry.TimeEntryRepository;
@@ -45,12 +48,16 @@ class SchemaEnglishNamingTest {
             "ck_time_entry_review_reasons",
             "fk_evidence_time_entry_company", "ck_evidence_type", "uq_evidence_time_entry_type",
             "ck_evidence_storage_key_type", "ck_evidence_storage_key_format", "ck_evidence_storage_key_company",
-            "fk_adjustment_time_entry_company", "fk_adjustment_admin_company", "ck_adjustment_reason");
+            "fk_adjustment_time_entry_company", "fk_adjustment_admin_company", "ck_adjustment_reason",
+            // Stage 4 (V4): ck_time_entry_source is replaced under the same name; a primary key is not counted.
+            "ck_adjustment_action", "ck_adjustment_field", "ck_adjustment_reason_length",
+            "fk_audit_log_actor_company", "ck_audit_log_action", "ck_audit_log_target_type");
 
     private static final List<String> EXPECTED_INDEXES = List.of(
             "ix_employee_company_active", "ix_time_entry_company_server_time",
             "ix_time_entry_employee_server_time", "ix_time_entry_pending_review", "ix_evidence_time_entry",
-            "ix_adjustment_time_entry", "ix_time_entry_company_work_date");
+            "ix_adjustment_time_entry", "ix_time_entry_company_work_date",
+            "ix_adjustment_company_created", "ix_audit_log_company_created");
 
     private final AtomicInteger dayCounter = new AtomicInteger();
 
@@ -70,7 +77,7 @@ class SchemaEnglishNamingTest {
     private EvidenceRepository evidences;
 
     @Test
-    void constraintNamesAreExactlyTheFortyFiveEnglishOnes() {
+    void constraintNamesAreExactlyTheFiftyOneEnglishOnes() {
         List<String> names = jdbc.queryForList("""
                 select c.conname from pg_constraint c
                   join pg_class t on t.oid = c.conrelid
@@ -78,18 +85,18 @@ class SchemaEnglishNamingTest {
                  where n.nspname = 'public' and c.contype in ('u', 'c', 'f')
                    and t.relname <> 'flyway_schema_history'
                 """, String.class);
-        assertThat(names).hasSize(45).containsExactlyInAnyOrderElementsOf(EXPECTED_CONSTRAINTS);
+        assertThat(names).hasSize(51).containsExactlyInAnyOrderElementsOf(EXPECTED_CONSTRAINTS);
     }
 
     @Test
-    void indexNamesAreTheSevenEnglishOnesAndThePartialIndexTargetsPendingReview() {
+    void indexNamesAreTheNineEnglishOnesAndThePartialIndexTargetsPendingReview() {
         List<String> names = jdbc.queryForList(
                 "select indexname from pg_indexes where schemaname = 'public' and indexname like 'ix\\_%'",
                 String.class);
         assertThat(names).containsExactlyInAnyOrderElementsOf(EXPECTED_INDEXES);
         String definition = jdbc.queryForObject(
                 "select indexdef from pg_indexes where indexname = 'ix_time_entry_pending_review'", String.class);
-        assertThat(definition).contains("PENDING_REVIEW");
+        assertThat(definition).contains("PENDING_REVIEW").contains("(company_id, work_date)");
     }
 
     @Test
@@ -114,6 +121,9 @@ class SchemaEnglishNamingTest {
         assertThat(width("time_entry", "source")).isGreaterThanOrEqualTo(longest(TimeEntrySource.values()));
         assertThat(width("time_entry", "status")).isGreaterThanOrEqualTo(longest(TimeEntryStatus.values()));
         assertThat(width("evidence", "type")).isGreaterThanOrEqualTo(longest(EvidenceType.values()));
+        assertThat(width("adjustment", "action")).isGreaterThanOrEqualTo(longest(AdjustmentAction.values()));
+        assertThat(width("audit_log", "action")).isGreaterThanOrEqualTo(longest(AuditAction.values()));
+        assertThat(width("audit_log", "target_type")).isGreaterThanOrEqualTo(longest(AuditTargetType.values()));
     }
 
     @ParameterizedTest
@@ -189,7 +199,7 @@ class SchemaEnglishNamingTest {
     void javaEnumsMatchTheDocumentedEnglishValues() {
         assertThat(Role.values()).extracting(Enum::name).containsExactly("EMPLOYEE", "ADMIN");
         assertThat(TimeEntryType.values()).extracting(Enum::name).containsExactly("CLOCK_IN", "CLOCK_OUT");
-        assertThat(TimeEntrySource.values()).extracting(Enum::name).containsExactly("MOBILE", "TABLET", "QR");
+        assertThat(TimeEntrySource.values()).extracting(Enum::name).containsExactly("MOBILE", "TABLET", "QR", "ADMIN");
         assertThat(TimeEntryStatus.values()).extracting(Enum::name)
                 .containsExactly("VALID", "PENDING_REVIEW", "REJECTED");
         assertThat(EvidenceType.values()).extracting(Enum::name).containsExactly("PHOTO", "GPS", "QR");
@@ -230,8 +240,8 @@ class SchemaEnglishNamingTest {
 
     private long insertTimeEntry(TestData.Tenant t, long employeeId, String type, String source, String status) {
         return jdbc.queryForObject("""
-                insert into time_entry (company_id, employee_id, branch_id, type, source, status, client_uuid, work_date)
-                values (?, ?, ?, ?, ?, ?, ?, ?) returning id
+                insert into time_entry (effective_time, company_id, employee_id, branch_id, type, source, status, client_uuid, work_date)
+                values (now(), ?, ?, ?, ?, ?, ?, ?, ?) returning id
                 """, Long.class, t.companyId(), employeeId, t.branchId(), type, source, status, UUID.randomUUID(),
                 // A distinct day per row: one CLOCK_IN/CLOCK_OUT per employee per work_date is unique.
                 LocalDate.now().minusDays(dayCounter.incrementAndGet()));

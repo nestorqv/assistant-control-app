@@ -2,6 +2,7 @@ package cr.attendance.employee;
 
 import jakarta.persistence.LockModeType;
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.Lock;
@@ -24,6 +25,16 @@ public interface EmployeeRepository extends Repository<Employee, Long> {
     Optional<Employee> findWithLockByIdAndCompanyId(Long id, Long companyId);
 
     List<Employee> findAllByCompanyIdOrderByName(Long companyId);
+
+    // Dashboard rows: everyone who can clock in (active, with a branch). Admins without a branch have no entries.
+    List<Employee> findAllByCompanyIdAndActiveTrueAndBranchIdIsNotNull(Long companyId);
+
+    // Callers pass a non-empty collection.
+    List<Employee> findAllByCompanyIdAndIdIn(Long companyId, Collection<Long> ids);
+
+    @Query("select e.branchId, count(e) from Employee e where e.companyId = :companyId and e.active = true "
+            + "and e.branchId is not null group by e.branchId")
+    List<Object[]> countActiveByBranch(@Param("companyId") Long companyId);
 
     // Login lookup: companyId comes from the already-resolved company, not from the request.
     Optional<Employee> findByCompanyIdAndCode(Long companyId, String code);

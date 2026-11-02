@@ -2,10 +2,12 @@ import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, test } from 'vitest'
 import { CLIENT_ERROR_KEYS, ERROR_CODE_KEYS } from '../errors/errorMessages'
+import { adminEn, adminEs } from '../i18n/adminResources'
 import { en, es } from '../i18n/resources'
 import { entryResponse, entrySummary, loginResponse, today } from '../test/fixtures'
 import { parseInstant, parseLocalTime } from './parse'
-import type { BlockedReason, NextAction, ReviewReason, Role, TimeEntryStatus } from './types'
+import type { AdjustmentAction, DayStatus } from '../admin/api/adminTypes'
+import type { BlockedReason, NextAction, ReviewReason, Role, TimeEntrySource, TimeEntryStatus } from './types'
 
 const backend = resolve(__dirname, '../../../backend/src/main/java/cr/attendance')
 
@@ -22,10 +24,16 @@ function javaEnum(file: string): string[] {
 }
 
 // Compile-time lists: if a union gains a member, the satisfies check below stops compiling.
-const reviewReasons = ['NO_GPS', 'OUTSIDE_GEOFENCE', 'LOW_GPS_ACCURACY', 'SYNCED_LATE', 'DEVICE_CLOCK_AHEAD', 'SHIFT_TOO_LONG'] as const satisfies readonly ReviewReason[]
+const reviewReasons = ['NO_GPS', 'OUTSIDE_GEOFENCE', 'LOW_GPS_ACCURACY', 'SYNCED_LATE', 'DEVICE_CLOCK_AHEAD', 'SHIFT_TOO_LONG', 'NO_GPS_ACCURACY', 'CLOCK_OUT_AFTER_SCHEDULE'] as const satisfies readonly ReviewReason[]
 const nextActions = ['CLOCK_IN', 'CLOCK_OUT', 'NONE'] as const satisfies readonly NextAction[]
 const statuses = ['VALID', 'PENDING_REVIEW', 'REJECTED'] as const satisfies readonly TimeEntryStatus[]
 const roles = ['EMPLOYEE', 'ADMIN'] as const satisfies readonly Role[]
+const sources = ['MOBILE', 'TABLET', 'QR', 'ADMIN'] as const satisfies readonly TimeEntrySource[]
+const actions = ['APPROVE', 'REJECT', 'CORRECT_TIME', 'CREATE_ENTRY'] as const satisfies readonly AdjustmentAction[]
+const dayStatuses = [
+  'REJECTED', 'OUTSIDE_AREA', 'NEEDS_REVIEW', 'MISSING_CLOCK_OUT', 'COMPLETE', 'LATE', 'ON_TIME', 'UNSCHEDULED',
+  'NOT_YET_DUE', 'NOT_CLOCKED', 'DAY_OFF',
+] as const satisfies readonly DayStatus[]
 export const blocked = ['CONSENT_REQUIRED', 'NO_BRANCH_ASSIGNED'] as const satisfies readonly BlockedReason[]
 
 describe.skipIf(!existsSync(backend))('drift guard against the Java enums', () => {
@@ -54,6 +62,15 @@ describe.skipIf(!existsSync(backend))('drift guard against the Java enums', () =
     expect([...statuses]).toEqual(javaEnum('timeentry/TimeEntryStatus.java'))
     expect([...roles]).toEqual(javaEnum('common/Role.java'))
     for (const status of statuses) expect(es[`status.${status}` as keyof typeof es]).toBeTruthy()
+  })
+
+  test('TimeEntrySource, AdjustmentAction and DayStatus match the Java enums and have texts', () => {
+    expect([...sources]).toEqual(javaEnum('timeentry/TimeEntrySource.java'))
+    expect([...actions]).toEqual(javaEnum('timeentry/AdjustmentAction.java'))
+    expect([...dayStatuses]).toEqual(javaEnum('admin/DayStatus.java'))
+    for (const name of dayStatuses) expect(adminEs[`admin.dayStatus.${name}`], name).toBeTruthy()
+    for (const name of actions) expect(adminEn[`admin.adjustmentAction.${name}`], name).toBeTruthy()
+    for (const name of sources) expect(adminEs[`admin.evidence.source.${name}`], name).toBeTruthy()
   })
 
   test('client error kinds exist in both languages', () => {

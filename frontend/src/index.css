@@ -412,7 +412,8 @@ button {
 }
 
 .result,
-.late {
+.late,
+.adjusted {
   display: flex;
   align-items: flex-start;
   gap: var(--space-2);

@@ -43,14 +43,7 @@ describe('landmarks, headings and live regions', () => {
     backend()
     await seedSession({ consentPending: true })
     renderApp('/consent')
-    await screen.findByRole('heading', { name: 'Tus datos y tu consentimiento' })
-    expect(screen.getAllByRole('status')).toHaveLength(1)
-  })
-
-  test('the admin placeholder keeps its own single status region (the health line)', async () => {
-    backend()
-    renderApp('/admin')
-    await screen.findByRole('heading', { name: 'Panel del administrador' })
+    await screen.findByRole('heading', { name: 'Sus datos y su consentimiento' })
     expect(screen.getAllByRole('status')).toHaveLength(1)
   })
 
@@ -69,7 +62,7 @@ describe('names and roles', () => {
     await seedSession()
     backend()
     renderApp('/')
-    await screen.findByText('Aún no has marcado hoy')
+    await screen.findByText('Aún no ha marcado hoy')
     const time = document.querySelector('time')!
     expect(time.hasAttribute('aria-label')).toBe(false)
     expect(time.getAttribute('datetime')).toMatch(/^\d{4}-\d\d-\d\dT/)

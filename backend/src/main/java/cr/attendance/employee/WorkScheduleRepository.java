@@ -10,6 +10,9 @@ public interface WorkScheduleRepository extends Repository<WorkSchedule, Long> {
 
     List<WorkSchedule> findAllByCompanyIdAndEmployeeId(Long companyId, Long employeeId);
 
+    // Dashboard: everyone scheduled on one ISO weekday.
+    List<WorkSchedule> findAllByCompanyIdAndDayOfWeek(Long companyId, Integer dayOfWeek);
+
     Optional<WorkSchedule> findByCompanyIdAndEmployeeIdAndDayOfWeek(Long companyId, Long employeeId,
             Integer dayOfWeek);
 }

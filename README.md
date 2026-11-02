@@ -98,7 +98,9 @@ cd backend
 .\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=dev"
 ```
 
-It creates company `DEMO` ("Empresa Demo") with branch "Sucursal Centro", employees `1001` to `1006` and admin `9001`, all with the PIN from `DEV_SEED_PIN`, and Monday to Friday schedules. Changing `DEV_SEED_PIN` afterwards has no effect; recreate the dev database to re-seed.
+It creates company `DEMO` ("Empresa Demo") with branch "Sucursal Centro", employees `1001` to `1012` and admin `9001`, all with the PIN from `DEV_SEED_PIN`, and Monday to Friday schedules. Each start also **ensures** that those employees exist (it adds the missing ones, for example `1007` to `1012` on an older database) and never resets an existing PIN. Changing `DEV_SEED_PIN` afterwards has no effect on existing users; recreate the dev database to re-seed them.
+
+**Demo day (opt-in).** With `DEV_SEED_DEMO_DAY=true` in `backend/.env`, the dev start inserts today's blueprint entries (only if the company has none for today in its time zone): María on time, José 17 min late, Ana on the tablet, Luis outside the area at 420 m (to review), Karla with a complete day, four more present (one late) and three people who have not clocked in, with placeholder selfies. On a weekday after 08:05 the dashboard then shows **9 of 12 present, 2 late, 3 not clocked, 1 to review**. It is off by default because it would stop you from testing María's real clock-in that day.
 
 ### Authentication
 
@@ -134,6 +136,17 @@ Rules:
 - New error codes: `CONSENT_REQUIRED`, `NO_BRANCH_ASSIGNED`, `ALREADY_CLOCKED_IN`, `NOT_CLOCKED_IN`, `SHIFT_ALREADY_COMPLETED`, `CLIENT_UUID_CONFLICT`, `PHOTO_REQUIRED`, `INVALID_PHOTO`, `PAYLOAD_TOO_LARGE`, `SERVER_BUSY`.
 
 The database migrates to V3 automatically on the next start; no reset is needed.
+
+## Admin panel
+
+Stage 4a (dashboard, evidence and review). Sign in at `/login` with company `DEMO`, employee `9001` and the `DEV_SEED_PIN`; an administrator lands on **`/admin`** (a `next=/admin/review` link works too; anything that is not an `/admin` path is ignored). The panel is a separate lazy chunk that phones never download.
+
+- **Attendance (`/admin`):** date picker (the server decides "today" in the company zone), branch filter, four KPI cards (present of expected, late arrivals, not clocked, to review), and a table with the day status chip, hours, edited marker and an evidence button per employee. "Actualizar automáticamente" refreshes every minute for today and can be switched off.
+- **Evidence viewer:** the selfie (fetched with the token only when opened, never cached; every view is logged and limited to 300 per 10 minutes), times (effective, received by the server, phone), distance and radius, GPS accuracy, the exact coordinates (only here) and links "Ver en el mapa" / "Ver la sucursal". The links open **Google Maps in a new tab only when clicked** and send it the coordinates; nothing is embedded.
+- **Review (`/admin/review`):** pending entries, oldest first, with Aprobar, Rechazar and Corregir hora (every action needs a reason of 5 to 500 characters and writes append-only `adjustment` rows). A manual clock-in or clock-out can be recorded from a missing row ("Registrar entrada / salida").
+- **Corrections model:** `server_time` (when the server received the entry) never changes; `effective_time` is the time that counts for worked hours and lateness. The employee sees the effective time with a "ajustada" note.
+- **Not yet:** branches, employees and schedules (4b) and the Excel export (4c); their menu entries and the export button appear when they ship.
+- To open it in dev: `cd frontend; npm run dev`, then `http://localhost:5173/login`. Against the production build use `npm run build; npm run preview` (the strict CSP applies).
 
 ## Employee PWA
 

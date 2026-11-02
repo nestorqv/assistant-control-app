@@ -111,8 +111,8 @@ class TimeEntryConcurrencyIntegrationTest {
     void theDatabaseRejectsASecondClockInForTheSameEmployeeAndWorkDate() throws Exception {
         CheckInClient.Actor actor = client.actor();
         String sql = """
-                insert into time_entry (company_id, employee_id, branch_id, type, source, client_uuid, work_date)
-                values (?, ?, ?, 'CLOCK_IN', 'MOBILE', ?, date '2026-10-22')
+                insert into time_entry (effective_time, company_id, employee_id, branch_id, type, source, client_uuid, work_date)
+                values (now(), ?, ?, ?, 'CLOCK_IN', 'MOBILE', ?, date '2026-10-22')
                 """;
         jdbc.update(sql, actor.companyId(), actor.employeeId(), actor.tenant().branchId(), UUID.randomUUID());
         assertThatThrownBy(() -> jdbc.update(sql, actor.companyId(), actor.employeeId(), actor.tenant().branchId(),
@@ -127,9 +127,9 @@ class TimeEntryConcurrencyIntegrationTest {
         // it, so the request reaches the insert, stores the file, and the unique index rejects the row.
         LocalDate today = clock.instant().atZone(CR).toLocalDate();
         jdbc.update("""
-                insert into time_entry (company_id, employee_id, branch_id, type, source, client_uuid, work_date,
+                insert into time_entry (effective_time, company_id, employee_id, branch_id, type, source, client_uuid, work_date,
                                         server_time)
-                values (?, ?, ?, 'CLOCK_IN', 'MOBILE', ?, ?, ?)
+                values (now(), ?, ?, ?, 'CLOCK_IN', 'MOBILE', ?, ?, ?)
                 """, actor.companyId(), actor.employeeId(), actor.tenant().branchId(), UUID.randomUUID(), today,
                 Timestamp.from(clock.instant().minus(Duration.ofDays(10))));
 

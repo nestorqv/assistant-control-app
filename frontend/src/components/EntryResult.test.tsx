@@ -35,7 +35,7 @@ describe('LocationChip (before sending: readiness only)', () => {
     renderWithI18n(<EvidenceChips camera="blocked" location={{ status: 'ready', accuracyMeters: 9 }} />)
     expect(screen.getByRole('heading', { name: 'Evidencia' })).toBeDefined()
     expect(screen.getAllByRole('listitem')).toHaveLength(2)
-    expect(screen.getByText('Cámara bloqueada · no podrás marcar sin selfie')).toBeDefined()
+    expect(screen.getByText('Cámara bloqueada · no podrá marcar sin selfie')).toBeDefined()
   })
 })
 
@@ -98,7 +98,7 @@ describe('EntryTimes', () => {
 
   test('a rejected entry is shown as rejected', () => {
     renderWithI18n(<EntryTimes clockIn={column({ status: 'REJECTED', result: null })} clockOut={null} />)
-    expect(screen.getByText('Rechazada. Contacta a tu administrador.')).toBeDefined()
+    expect(screen.getByText('Rechazada. Contacte a su administrador.')).toBeDefined()
   })
 
   test('the summary of a today entry maps to the same result line', () => {
