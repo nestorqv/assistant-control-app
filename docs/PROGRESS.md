@@ -153,6 +153,8 @@ Branch: `stage1-2`. Inventory: [naming-inventory.md](naming-inventory.md)
 - [x] Dashboard: KPI cards + employee table (4a, 2026-11-02)
 - [x] Evidence viewer (4a, 2026-11-02)
 - [x] Review queue with `ajuste` audit rows (4a, 2026-11-02)
+- [x] Demo day avatar placeholder instead of initials (Small) + seed tests isolated from `.env` - 2026-11-02; backend 754 passing (2 skipped)
+- [ ] 4b plan (`planner`, Full flow; started 2026-11-02, paused by the user)
 - [ ] 4b: security L-1 (invisible characters in reasons), L-2 (entry-detail location rate limit + audit), L-4 (admin write rate limit)
 - [ ] CRUD sucursales / empleados / horarios
 - [ ] Excel export (Apache POI)

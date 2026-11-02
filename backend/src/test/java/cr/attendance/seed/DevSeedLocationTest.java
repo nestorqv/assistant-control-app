@@ -24,7 +24,8 @@ import org.springframework.test.context.ActiveProfiles;
 
 /** DEV_SEED_LAT / LNG / RADIUS: a fresh seed uses them and an existing branch is updated on the next start. */
 @SpringBootTest(properties = {"app.seed.pin=" + DevSeedLocationTest.SEED_PIN,
-    "app.seed.branch-latitude=10.5", "app.seed.branch-longitude=-83.25", "app.seed.branch-radius-meters=250"})
+    "app.seed.branch-latitude=10.5", "app.seed.branch-longitude=-83.25", "app.seed.branch-radius-meters=250",
+    "app.seed.demo-day=false"})
 @AutoConfigureMockMvc
 @AutoConfigureEmbeddedDatabase(type = DatabaseType.POSTGRES, provider = DatabaseProvider.ZONKY)
 @ActiveProfiles({"test", "dev"})

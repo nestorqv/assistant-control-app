@@ -20,7 +20,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
 /** Own context and own database: the only place where global row counts are asserted. */
-@SpringBootTest(properties = "app.seed.pin=" + DevSeedEnabledTest.SEED_PIN)
+@SpringBootTest(properties = {"app.seed.pin=" + DevSeedEnabledTest.SEED_PIN, "app.seed.demo-day=false"})
 @AutoConfigureMockMvc
 @AutoConfigureEmbeddedDatabase(type = DatabaseType.POSTGRES, provider = DatabaseProvider.ZONKY)
 @ActiveProfiles({"test", "dev"})

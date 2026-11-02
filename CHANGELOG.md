@@ -2,6 +2,12 @@
 
 ## [2026-11-02]
 
+### Changed
+- Dev demo day: the placeholder "selfie" is now a drawn head-and-shoulders avatar (skin tone, hair, shirt and background vary by employee) instead of large initials.
+
+### Fixed
+- Seed tests (`DevSeedContentTest`, `DevSeedEnabledTest`, `DevSeedLocationTest`) pin `app.seed.demo-day=false`, so `DEV_SEED_DEMO_DAY=true` in a developer's `backend/.env` no longer breaks them. Backend 754 passing (2 skipped).
+
 ### Added (tests)
 - Stage 4a frontend tests (+76): `DashboardPage`, `EvidenceDialog`, `ReviewQueuePage`, `CreateEntryDialog`, `RequireAdmin`, plus the shared fake admin API `src/test/adminBackend.ts`.
 - Stage 4a backend tests (+10): `AdminTenantIsolationIntegrationTest` (another company's ids give 404 and write nothing), `ReviewConcurrencyIntegrationTest` (racing corrections/approvals give one 200 and one 409), `AdjustmentValuesIntegrationTest` (empty string vs SQL NULL, never `"null"`).

@@ -28,7 +28,8 @@ import org.springframework.test.web.servlet.MockMvc;
  * Content of the dev seed against the blueprint, plus the startup log. Uses a different seed PIN from
  * DevSeedEnabledTest so it gets its own context and its own embedded database.
  */
-@SpringBootTest(properties = "app.seed.pin=" + DevSeedContentTest.SEED_PIN)
+// demo-day pinned off so a developer's backend/.env (DEV_SEED_DEMO_DAY=true) cannot change the seeded rows.
+@SpringBootTest(properties = {"app.seed.pin=" + DevSeedContentTest.SEED_PIN, "app.seed.demo-day=false"})
 @AutoConfigureMockMvc
 @AutoConfigureEmbeddedDatabase(type = DatabaseType.POSTGRES, provider = DatabaseProvider.ZONKY)
 @ActiveProfiles({"test", "dev"})

@@ -19,11 +19,16 @@ import cr.attendance.timeentry.TimeEntryRepository;
 import cr.attendance.timeentry.TimeEntrySource;
 import cr.attendance.timeentry.TimeEntryStatus;
 import cr.attendance.timeentry.TimeEntryType;
+import java.awt.BasicStroke;
 import java.awt.Color;
-import java.awt.Font;
-import java.awt.FontMetrics;
 import java.awt.Graphics2D;
+import java.awt.Polygon;
 import java.awt.RenderingHints;
+import java.awt.geom.Arc2D;
+import java.awt.geom.Ellipse2D;
+import java.awt.geom.Line2D;
+import java.awt.geom.Rectangle2D;
+import java.awt.geom.RoundRectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -157,24 +162,74 @@ public class DemoDayEntries {
         return 1;
     }
 
-    /** A solid color with the initials of the employee. Not a real selfie. */
+    private static final Color[] SKIN_TONES = {
+        new Color(0xF1C9A5), new Color(0xE0AC84), new Color(0xC68642), new Color(0x8D5524), new Color(0x6B4026),
+    };
+    private static final Color[] HAIR_COLORS = {
+        new Color(0x1C1410), new Color(0x4A2E1B), new Color(0x7A4A22), new Color(0xB5803A), new Color(0x555555),
+    };
+    private static final Color[] SHIRT_COLORS = {
+        new Color(0x2F6DB5), new Color(0xC0504D), new Color(0x3E9B6B), new Color(0x8064A2), new Color(0xE08A2E),
+    };
+
+    /** A drawn person avatar picked from the name. Not a real selfie. */
     static byte[] placeholderJpeg(String name) {
         int width = 360;
         int height = 480;
+        int hash = name.hashCode();
+        Color skin = SKIN_TONES[Math.floorMod(hash, SKIN_TONES.length)];
+        Color hair = HAIR_COLORS[Math.floorMod(hash >> 4, HAIR_COLORS.length)];
+        Color shirt = SHIRT_COLORS[Math.floorMod(hash >> 8, SHIRT_COLORS.length)];
+        int hairStyle = Math.floorMod(hash >> 12, 3);
+        Color background = new Color(200 + Math.floorMod(hash >> 16, 40), 215 + Math.floorMod(hash >> 20, 30),
+                225 + Math.floorMod(hash >> 24, 25));
+        Color dark = new Color(0x2B2B2B);
+
         BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
         Graphics2D g = image.createGraphics();
         try {
             g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-            g.setColor(new Color(Math.floorMod(name.hashCode(), 96) + 40, 95 + Math.floorMod(name.hashCode() >> 8, 60),
-                    110 + Math.floorMod(name.hashCode() >> 16, 60)));
+            g.setColor(background);
             g.fillRect(0, 0, width, height);
+
+            // Long hair sits behind the head and shoulders.
+            g.setColor(hair);
+            if (hairStyle == 1) {
+                g.fill(new RoundRectangle2D.Double(92, 115, 176, 260, 90, 90));
+            } else if (hairStyle == 2) {
+                g.fill(new Ellipse2D.Double(85, 105, 190, 190));
+            }
+            // Shoulders, neck, ears, face.
+            g.setColor(shirt);
+            g.fill(new RoundRectangle2D.Double(40, 370, 280, 220, 140, 140));
+            g.setColor(skin.darker());
+            g.fill(new Rectangle2D.Double(152, 300, 56, 90));
+            g.setColor(skin);
+            g.fill(new Ellipse2D.Double(98, 215, 24, 44));
+            g.fill(new Ellipse2D.Double(238, 215, 24, 44));
+            g.fill(new Ellipse2D.Double(105, 135, 150, 195));
+            // V-neck over the neck.
+            g.setColor(skin.darker());
+            g.fill(new Polygon(new int[] {150, 210, 180}, new int[] {372, 372, 410}, 3));
+
+            // Front hair: a dome over the top of the face.
+            g.setColor(hair);
+            double domeHeight = hairStyle == 0 ? 110 : 140;
+            g.fill(new Arc2D.Double(100, 128, 160, domeHeight, 0, 180, Arc2D.CHORD));
+
+            // Eyes, eyebrows, smile.
             g.setColor(Color.WHITE);
-            g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 120));
-            String initials = initials(name);
-            FontMetrics metrics = g.getFontMetrics();
-            g.drawString(initials, (width - metrics.stringWidth(initials)) / 2,
-                    (height - metrics.getHeight()) / 2 + metrics.getAscent());
+            g.fill(new Ellipse2D.Double(142, 222, 28, 18));
+            g.fill(new Ellipse2D.Double(190, 222, 28, 18));
+            g.setColor(dark);
+            g.fill(new Ellipse2D.Double(151, 224, 12, 14));
+            g.fill(new Ellipse2D.Double(199, 224, 12, 14));
+            g.setStroke(new BasicStroke(5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+            g.setColor(hair.darker());
+            g.draw(new Line2D.Double(140, 207, 170, 203));
+            g.draw(new Line2D.Double(190, 203, 220, 207));
+            g.setColor(dark);
+            g.draw(new Arc2D.Double(150, 255, 60, 44, 200, 140, Arc2D.OPEN));
         } finally {
             g.dispose();
         }
@@ -184,15 +239,5 @@ public class DemoDayEntries {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-    }
-
-    static String initials(String name) {
-        StringBuilder sb = new StringBuilder();
-        for (String part : name.trim().split("\\s+")) {
-            if (!part.isEmpty() && sb.length() < 2) {
-                sb.append(Character.toUpperCase(part.charAt(0)));
-            }
-        }
-        return sb.toString();
     }
 }
