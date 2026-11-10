@@ -264,6 +264,10 @@ export const es = {
   'error.SELF_CHANGE_NOT_ALLOWED': 'No puede desactivarse ni quitarse el rol de administrador.',
   'error.DATE_RANGE_TOO_LARGE': 'Elija un período de máximo 62 días, con el inicio antes del fin.',
   'error.REPORT_TOO_LARGE': 'Hay demasiados datos. Reduzca el período o elija una sucursal.',
+  'error.RATE_LIMITED': 'Demasiadas acciones en poco tiempo. Espere unos minutos e intente de nuevo.',
+  'error.RECORD_CHANGED': 'Otra persona modificó este registro. Recargue e intente de nuevo.',
+  'error.ADMIN_PIN_RESET_NOT_ALLOWED':
+    'No se puede restablecer el PIN de otro administrador activo.',
   'error.network': 'No se pudo conectar con el servidor. Revise su conexión e inténtelo de nuevo.',
   'error.timeout': 'El servidor tardó demasiado en responder. Inténtelo de nuevo.',
   'error.sessionExpired': 'Su sesión venció. Ingrese su PIN.',
@@ -529,6 +533,10 @@ export const en: Record<MessageKey, string> = {
   'error.SELF_CHANGE_NOT_ALLOWED': 'You cannot deactivate yourself or remove your own administrator role.',
   'error.DATE_RANGE_TOO_LARGE': 'Choose a period of at most 62 days, with the start before the end.',
   'error.REPORT_TOO_LARGE': 'There is too much data. Narrow the period or choose a branch.',
+  'error.RATE_LIMITED': 'Too many actions in a short time. Wait a few minutes and try again.',
+  'error.RECORD_CHANGED': 'Someone else changed this record. Reload and try again.',
+  'error.ADMIN_PIN_RESET_NOT_ALLOWED':
+    "You can't reset the PIN of another active administrator.",
   'error.network': "Couldn't connect to the server. Check your connection and try again.",
   'error.timeout': 'The server took too long to respond. Try again.',
   'error.sessionExpired': 'Your session expired. Enter your PIN.',

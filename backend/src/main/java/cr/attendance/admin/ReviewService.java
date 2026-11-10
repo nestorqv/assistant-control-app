@@ -2,6 +2,7 @@ package cr.attendance.admin;
 
 import cr.attendance.common.ApiException;
 import cr.attendance.common.EmployeePrincipal;
+import cr.attendance.common.Constraints;
 import cr.attendance.common.ErrorCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,11 +44,13 @@ public class ReviewService {
         try {
             return detailService.detail(principal, writer.create(principal, request));
         } catch (DataIntegrityViolationException e) {
-            String cause = String.valueOf(e.getMostSpecificCause().getMessage());
-            if (cause.contains("uq_time_entry_employee_work_date_type")) {
+            String constraint = Constraints.nameOf(e);
+            if ("uq_time_entry_employee_work_date_type".equals(constraint)) {
                 throw new ApiException(HttpStatus.CONFLICT, ErrorCode.ENTRY_ALREADY_EXISTS);
             }
-            log.error("Unexpected constraint violation while creating an admin entry", e);
+            // Constraint name and class only: the driver message can carry row values (PII).
+            log.error("Unexpected constraint violation while creating an admin entry constraint={} class={}",
+                    constraint, e.getMostSpecificCause().getClass().getSimpleName());
             throw e;
         }
     }

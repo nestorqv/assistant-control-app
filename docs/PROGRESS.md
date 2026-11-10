@@ -13,7 +13,7 @@ Roadmap: [plans/00-roadmap.md](plans/00-roadmap.md)
 | 1b - English naming + EN/ES | Done | 2026-10-22 | 2026-10-22 |
 | 2 - Check-in API | Done | 2026-10-22 | 2026-10-26 |
 | 3 - Employee PWA | Done (real-phone check deferred) | 2026-10-26 | 2026-10-28 |
-| 4 - Admin panel | In progress | 2026-10-28 | |
+| 4 - Admin panel | In progress (4a, 4b done; 4c Excel next) | 2026-10-28 | |
 | 5 - Hardening + deploy | Not started | | |
 
 ## Stage 0 - Foundation
@@ -154,9 +154,34 @@ Branch: `stage1-2`. Inventory: [naming-inventory.md](naming-inventory.md)
 - [x] Evidence viewer (4a, 2026-11-02)
 - [x] Review queue with `ajuste` audit rows (4a, 2026-11-02)
 - [x] Demo day avatar placeholder instead of initials (Small) + seed tests isolated from `.env` - 2026-11-02; backend 754 passing (2 skipped)
-- [ ] 4b plan (`planner`, Full flow; started 2026-11-02, paused by the user)
-- [ ] 4b: security L-1 (invisible characters in reasons), L-2 (entry-detail location rate limit + audit), L-4 (admin write rate limit)
-- [ ] CRUD sucursales / empleados / horarios
+- [x] 4b plan written (`docs/plans/stage-4b-management.md`, 13 open questions) - 2026-11-02
+- [x] 4b plan-critic (2026-11-02): APPROVED, 2 medium + 4 low findings, 2 extra questions
+- [x] 4b open questions answered (2026-11-03): all as recommended; Q4 no required reason but an optional, tracked PIN-reset reason; Q2 separate 300/10 min review budget; Q14 another admin's PIN only when that admin is inactive or locked
+- [x] PII guardrail added by the user (2026-11-03): PIN, ID number, phone, full name; rule in `CLAUDE.md` Project rules and in the 4b plan
+- [x] 4b plan updated with answers + critic findings + PII guardrail (2026-11-03); V5 adds version columns, blank-name checks, `audit_log.reason_code` / `reason_note`
+- [x] User approval of the updated 4b plan - 2026-11-03
+- [x] 4b architect (2026-11-03): `docs/diagrams/stage-4b-management.md` (ER after V5, layers, 6 sequences, 16 coder notes)
+- [x] 4b designer (2026-11-03): `docs/design/stage-4b-management.md`; 11 conflicts resolved by the main session (section 10; "Copiar PIN" removed under the PII rule)
+- [x] 4b coder (2026-11-04): V5, branch / employee / schedule APIs, PIN reset with reason, write rate limits, lock order + actor re-check, management screens; backend 867 pass (2 skipped), frontend 879 pass (2 skipped), lint 0 errors, build OK
+- [x] 4b code review (2026-11-05): APPROVED with 1 medium + 4 low findings (server digit-run rule misses Unicode spaces; length counting; retired-branch option; PIN-reset 404 before actor check; constraint name from structured field)
+- [x] 4b coder fixes the 5 review findings (2026-11-05): Unicode spaces in the digit-run rule, length by UTF-16 units, retired branch option enabled, PIN-reset 403 before 404, constraint name from `PSQLException`; PostgreSQL driver now compile scope; backend 875 pass (2 skipped), frontend 883 pass (2 skipped)
+- [x] 4b tester (2026-11-05): last-admin guards + mutual demotion races, `RATE_LIMITED` code, driver-level `logServerErrorDetail`, stale versions, schedule time formats; flaky `reauth.test.tsx` fixed (test timeout); no production bug; backend 878 pass (2 skipped), frontend 883 pass (2 skipped)
+- [x] 4b test review (2026-11-06): REJECTED, 15 findings (2 high: `reauth.test.tsx` times out in full runs; lock-order tests accept a reversed order)
+- [x] 4b tester fixes the test-review findings, cycle 1 of 2 (2026-11-06): all 15 addressed plus PIN-assertion sweep; found 1 production bug (focus not moved to "Restablecer PIN" after unlock); backend 893 pass (2 skipped), frontend 889 pass, 1 fail (that bug)
+- [x] 4b security audit (2026-11-06): REJECTED, `securityAudit-report/stage-4b-management.md`. M-1: admin write limiter (and the Stage 2 clock-in limiter) skipped with a percent-encoded path. L-1: other-admin PIN-reset rule bypassable by first locking the target via login. L-2: failing test assertions would print a PIN. 4a L-1 / L-2 resolved, L-4 partial (M-1)
+- [x] User decision on security L-1 (2026-11-06): option A, keep the rule and reword `ADMIN_PIN_RESET_NOT_ALLOWED` so it no longer hints at locking the account
+- [x] 4b coder fixes security M-1 + L-1 message + unlock focus bug (2026-11-06): both rate-limit filters match the decoded path; new `ADMIN_PIN_RESET_NOT_ALLOWED` text; focus moves to "Restablecer PIN" after unlock; backend 896 pass (2 skipped), frontend 890 pass (2 skipped) twice, build OK
+- [x] 4b security re-audit (2026-11-06): APPROVED. M-1 and L-2 resolved, L-1 accepted (option A, rewording confirmed), 4a L-4 resolved; info notes N-1 (filters rely on Boot's forced UTF-8) and N-2 (token resolver compares the raw URL, extra 401 only)
+- [x] 4b test re-review, cycle 2 of 2 (2026-11-06): REJECTED. 14 of 15 earlier findings fixed, 2 partial. Open: HIGH new deadlock test is timing-dependent (fails about 1 run in 3); MEDIUM "search not in URL" check can't fail under MemoryRouter; LOW MockMvc print-on-failure and one seed test print the fixture PIN. Loop limit reached, waiting for the user
+- [x] User decision on the open test-review findings (2026-11-06): one extra tester round, then one final test re-review
+- [x] 4b tester, extra round (2026-11-09): deadlock test polls `pg_locks` (10/10 isolated runs pass), router-location probe for the search check, MockMvc print-on-failure off in every test class, boolean PIN checks in seed tests; backend 896 pass (2 skipped), frontend 890 pass (2 skipped) twice; logs checked: no PIN field or token
+- [x] 4b final test re-review (2026-11-09): APPROVED; one low note (the `pg_locks` poll is not limited to the request's own lock; can only cause a false failure, never a false pass)
+- [x] 4b: security L-1 (invisible characters in reasons), L-2 (entry-detail location rate limit + audit), L-4 (admin write rate limit) - 2026-11-06
+- [x] CRUD sucursales / empleados / horarios - 2026-11-09 (4b tests pass: backend 896, 2 skipped; frontend 890, 2 skipped)
+- [x] 4b manual browser test (user) - 2026-11-10
+- [x] 4b commit - 2026-11-10
+- [ ] Backlog: audit history screen (PIN-reset reasons and other admin actions)
+- [ ] Stage 5: pin the rate-limit filters to UTF-8 path decoding (4b audit note N-1)
 - [ ] Excel export (Apache POI)
 - [ ] Tests pass
 

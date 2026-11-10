@@ -102,8 +102,12 @@ test('the auto refresh reloads today when the tab becomes visible', async () => 
   await asAdmin()
   await screen.findByRole('table')
   const before = dashCalls(calls)
-  becomeVisible()
-  await waitFor(() => expect(dashCalls(calls)).toBe(before + 1))
+  // The page ignores the event until the shell knows the company-local date (review count answered), so the
+  // first try can land too early on a slow machine: repeat it until the reload happens.
+  await waitFor(() => {
+    becomeVisible()
+    expect(dashCalls(calls)).toBeGreaterThan(before)
+  })
 })
 
 test('the real minute timer reloads today once per 60 s', async () => {

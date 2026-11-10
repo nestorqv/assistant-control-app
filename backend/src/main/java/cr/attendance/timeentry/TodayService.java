@@ -71,10 +71,13 @@ public class TodayService {
         TimeEntry clockIn = find(day, TimeEntryType.CLOCK_IN);
         TimeEntry clockOut = find(day, TimeEntryType.CLOCK_OUT);
 
+        // A retired branch counts as no branch (see TimeEntryWriter).
+        Branch branch = employee.getBranchId() == null ? null
+                : branchRepository.findByIdAndCompanyId(employee.getBranchId(), companyId).orElse(null);
         String blockedReason = null;
         if (employee.getConsentAt() == null) {
             blockedReason = "CONSENT_REQUIRED";
-        } else if (employee.getBranchId() == null) {
+        } else if (branch == null || !branch.isActive()) {
             blockedReason = "NO_BRANCH_ASSIGNED";
         }
         NextAction nextAction = blockedReason != null ? NextAction.NONE
@@ -92,11 +95,7 @@ public class TodayService {
         TodayResponse.ScheduleInfo schedule = workScheduleRepository.findByCompanyIdAndEmployeeIdAndDayOfWeek(
                 companyId, employee.getId(), workDate.getDayOfWeek().getValue())
                 .map(TodayService::scheduleInfo).orElse(null);
-        TodayResponse.BranchInfo branchInfo = null;
-        if (employee.getBranchId() != null) {
-            branchInfo = branchRepository.findByIdAndCompanyId(employee.getBranchId(), companyId)
-                    .map(TodayService::branchInfo).orElse(null);
-        }
+        TodayResponse.BranchInfo branchInfo = branch == null ? null : branchInfo(branch);
 
         return new TodayResponse(workDate, nextAction, blockedReason, summary(clockIn), summary(clockOut),
                 workedMinutes, open.isPresent(), missingClockOut, forgotten.map(TimeEntry::getWorkDate).orElse(null),

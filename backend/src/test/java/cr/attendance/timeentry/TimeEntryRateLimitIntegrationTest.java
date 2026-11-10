@@ -86,6 +86,23 @@ class TimeEntryRateLimitIntegrationTest {
                 .andExpect(status().isTooManyRequests());
     }
 
+    /** M-1: "/api/time-%65ntries" reaches the same controller, so it must be counted too. */
+    @Test
+    void aPercentEncodedPathCountsTowardTheLimit() throws Exception {
+        CheckInClient.Actor actor = client.actor();
+        for (int i = 0; i < 3; i++) {
+            client.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                    .post(java.net.URI.create("/api/time-%65ntries")).contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                    .content("{}").header(HttpHeaders.AUTHORIZATION, "Bearer " + actor.token()));
+        }
+        client.post(actor, client.form("CLOCK_IN", Instant.now()), TestImages.jpeg())
+                .andExpect(status().isTooManyRequests());
+        client.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                .post(java.net.URI.create("/api/time-%65ntries")).contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                .content("{}").header(HttpHeaders.AUTHORIZATION, "Bearer " + actor.token()))
+                .andExpect(status().isTooManyRequests());
+    }
+
     @Test
     void aRefusedPostDoesNotWriteAnythingNew() throws Exception {
         CheckInClient.Actor actor = client.actor();

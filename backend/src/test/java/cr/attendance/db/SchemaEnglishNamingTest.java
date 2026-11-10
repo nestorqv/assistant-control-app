@@ -51,7 +51,9 @@ class SchemaEnglishNamingTest {
             "fk_adjustment_time_entry_company", "fk_adjustment_admin_company", "ck_adjustment_reason",
             // Stage 4 (V4): ck_time_entry_source is replaced under the same name; a primary key is not counted.
             "ck_adjustment_action", "ck_adjustment_field", "ck_adjustment_reason_length",
-            "fk_audit_log_actor_company", "ck_audit_log_action", "ck_audit_log_target_type");
+            "fk_audit_log_actor_company", "ck_audit_log_action", "ck_audit_log_target_type",
+            // Stage 4b (V5): blank-name checks and the optional reason of an admin action.
+            "ck_employee_name", "ck_branch_name", "ck_audit_log_reason_code", "ck_audit_log_reason_note");
 
     private static final List<String> EXPECTED_INDEXES = List.of(
             "ix_employee_company_active", "ix_time_entry_company_server_time",
@@ -77,7 +79,7 @@ class SchemaEnglishNamingTest {
     private EvidenceRepository evidences;
 
     @Test
-    void constraintNamesAreExactlyTheFiftyOneEnglishOnes() {
+    void constraintNamesAreExactlyTheFiftyFiveEnglishOnes() {
         List<String> names = jdbc.queryForList("""
                 select c.conname from pg_constraint c
                   join pg_class t on t.oid = c.conrelid
@@ -85,7 +87,7 @@ class SchemaEnglishNamingTest {
                  where n.nspname = 'public' and c.contype in ('u', 'c', 'f')
                    and t.relname <> 'flyway_schema_history'
                 """, String.class);
-        assertThat(names).hasSize(51).containsExactlyInAnyOrderElementsOf(EXPECTED_CONSTRAINTS);
+        assertThat(names).hasSize(55).containsExactlyInAnyOrderElementsOf(EXPECTED_CONSTRAINTS);
     }
 
     @Test

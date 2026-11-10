@@ -3,8 +3,12 @@ import { Announcer } from '../components/Announcer'
 import './admin.css'
 import './admin-content.css'
 import './admin-dialogs.css'
+import './admin-manage.css'
 import { AdminLayout } from './AdminLayout'
+import { BranchesPage } from './pages/BranchesPage'
 import { DashboardPage } from './pages/DashboardPage'
+import { EmployeeDetailPage } from './pages/EmployeeDetailPage'
+import { EmployeesPage } from './pages/EmployeesPage'
 import { ReviewQueuePage } from './pages/ReviewQueuePage'
 
 /**
@@ -18,6 +22,9 @@ export function AdminApp() {
         <Routes>
           <Route index element={<DashboardPage />} />
           <Route path="review" element={<ReviewQueuePage />} />
+          <Route path="employees" element={<EmployeesPage />} />
+          <Route path="employees/:id" element={<EmployeeDetailPage />} />
+          <Route path="branches" element={<BranchesPage />} />
           <Route path="*" element={<Navigate to="/admin" replace />} />
         </Routes>
       </AdminLayout>

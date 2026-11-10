@@ -2,6 +2,7 @@ package cr.attendance.admin;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import cr.attendance.support.AdminClient;
@@ -19,6 +20,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.MockMvcPrint;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -26,7 +28,7 @@ import org.springframework.test.context.ActiveProfiles;
 
 /** Own context: small limits so the caps can be reached with a handful of requests. */
 @SpringBootTest(properties = {"app.admin.max-dashboard-rows=2", "app.admin.rate-limit.photo.max-attempts=3"})
-@AutoConfigureMockMvc
+@AutoConfigureMockMvc(print = MockMvcPrint.NONE)
 @AutoConfigureEmbeddedDatabase(type = DatabaseType.POSTGRES, provider = DatabaseProvider.ZONKY)
 @ActiveProfiles("test")
 @Import(MutableClockConfig.class)
@@ -80,7 +82,7 @@ class AdminLimitsIntegrationTest {
         admins.get(first.token(), "/api/admin/time-entries/987654/photo").andExpect(status().isNotFound());
         admins.get(first.token(), "/api/admin/time-entries/987655/photo").andExpect(status().isNotFound());
         admins.get(first.token(), "/api/admin/time-entries/" + id + "/photo").andExpect(status().isTooManyRequests())
-                .andExpect(header().exists("Retry-After"));
+                .andExpect(jsonPath("$.code").value("RATE_LIMITED")).andExpect(header().exists("Retry-After"));
 
         // Another admin has their own budget.
         admins.get(second.token(), "/api/admin/time-entries/" + id + "/photo").andExpect(status().isOk());

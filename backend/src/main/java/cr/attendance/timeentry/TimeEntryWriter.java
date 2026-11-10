@@ -93,6 +93,11 @@ public class TimeEntryWriter {
         Company company = companyRepository.findById(companyId).orElseThrow(ResourceNotFoundException::new);
         Branch branch = branchRepository.findByIdAndCompanyId(employee.getBranchId(), companyId)
                 .orElseThrow(ResourceNotFoundException::new);
+        // A retired branch counts as no branch (defense in depth: the admin lock protocol already keeps active
+        // employees off inactive branches; operator SQL could break that).
+        if (!branch.isActive()) {
+            throw new ApiException(HttpStatus.FORBIDDEN, ErrorCode.NO_BRANCH_ASSIGNED);
+        }
 
         // Never LocalDate.now() or the JVM zone: the company zone decides the work date.
         ZoneId zone = ZoneId.of(company.getTimeZone());

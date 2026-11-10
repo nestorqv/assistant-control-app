@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.MockMvcPrint;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
@@ -20,8 +21,10 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
 /** Own context and own database: the only place where global row counts are asserted. */
-@SpringBootTest(properties = {"app.seed.pin=" + DevSeedEnabledTest.SEED_PIN, "app.seed.demo-day=false"})
-@AutoConfigureMockMvc
+@SpringBootTest(properties = {"app.seed.pin=" + DevSeedEnabledTest.SEED_PIN, "app.seed.demo-day=false",
+        // All five seed properties are pinned: a developer's backend/.env (DEV_SEED_*) must not change what is seeded.
+        "app.seed.branch-latitude=", "app.seed.branch-longitude=", "app.seed.branch-radius-meters="})
+@AutoConfigureMockMvc(print = MockMvcPrint.NONE)
 @AutoConfigureEmbeddedDatabase(type = DatabaseType.POSTGRES, provider = DatabaseProvider.ZONKY)
 @ActiveProfiles({"test", "dev"})
 @ExtendWith(OutputCaptureExtension.class)
@@ -62,7 +65,7 @@ class DevSeedEnabledTest {
                 .andExpect(status().isOk());
 
         // The second seeder run above logs too; the PIN must never appear in any captured output.
-        assertThat(output.getAll()).doesNotContain(SEED_PIN);
+        assertThat(output.getAll().contains(SEED_PIN)).as("the logs carry the seed PIN").isFalse();
         assertThat(output.getAll()).contains("Dev seed already present");
     }
 
@@ -79,6 +82,7 @@ class DevSeedEnabledTest {
         assertThat(count("select count(*) from work_schedule")).isEqualTo(65);
         assertThat(jdbc.queryForObject("select pin_hash from employee where code = '1001'", String.class))
                 .isEqualTo(before);
-        assertThat(output.getAll()).contains("added 1 missing demo employees").doesNotContain(SEED_PIN);
+        assertThat(output.getAll()).contains("added 1 missing demo employees");
+        assertThat(output.getAll().contains(SEED_PIN)).as("the logs carry the seed PIN").isFalse();
     }
 }

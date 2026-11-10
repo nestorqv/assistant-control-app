@@ -89,7 +89,8 @@ describe('signing in', () => {
 
     await screen.findByRole('heading', { name: 'Hola, María' })
     const call = mock.mock.calls.find(([url]) => String(url) === '/api/auth/login')!
-    expect(JSON.parse(call[1]!.body as string)).toEqual({ companyCode: 'DEMO', employeeCode: 'E-1001', pin: PIN })
+    const sent = JSON.parse(call[1]!.body as string)
+    expect({ ...sent, pin: sent.pin === PIN }).toEqual({ companyCode: 'DEMO', employeeCode: 'E-1001', pin: true })
     expect(new Headers(call[1]!.headers).get('Content-Type')).toBe('application/json')
     expect(new Headers(call[1]!.headers).has('Authorization')).toBe(false)
     expect(getSession().token).toBe('token-1')
@@ -126,7 +127,7 @@ describe('signing in', () => {
     await pressPin(user, PIN)
     await user.click(submit())
     await screen.findByRole('heading', { name: 'Hola, María' })
-    expect(JSON.stringify({ ...sessionStorage, ...localStorage })).not.toContain(PIN)
+    expect(JSON.stringify({ ...sessionStorage, ...localStorage }).includes(PIN), 'the storage carries the PIN').toBe(false)
   })
 })
 

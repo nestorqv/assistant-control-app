@@ -34,7 +34,10 @@ public enum ErrorCode {
     LAST_ADMIN,
     SELF_CHANGE_NOT_ALLOWED,
     DATE_RANGE_TOO_LARGE,
-    REPORT_TOO_LARGE;
+    REPORT_TOO_LARGE,
+    RATE_LIMITED,
+    RECORD_CHANGED,
+    ADMIN_PIN_RESET_NOT_ALLOWED;
 
     /** Message bundle key, e.g. error.INVALID_CREDENTIALS.title. */
     public String messageKey(String part) {

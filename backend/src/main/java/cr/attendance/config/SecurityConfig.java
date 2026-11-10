@@ -31,6 +31,8 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http, EmployeeJwtAuthenticationConverter converter,
             FixedWindowRateLimiter timeEntryRateLimiter,
+            @Qualifier("adminWriteRateLimiter") FixedWindowRateLimiter adminWriteRateLimiter,
+            @Qualifier("reviewWriteRateLimiter") FixedWindowRateLimiter reviewWriteRateLimiter,
             @Qualifier("handlerExceptionResolver") HandlerExceptionResolver handlerExceptionResolver,
             LocaleResolver localeResolver) throws Exception {
         // Plain 401 (no WWW-Authenticate) and plain 403 (empty body), same as Stage 0.
@@ -58,6 +60,8 @@ public class SecurityConfig {
                 // After the bearer token is authenticated, before authorization and the dispatcher.
                 .addFilterAfter(new TimeEntryRateLimitFilter(timeEntryRateLimiter, handlerExceptionResolver,
                         localeResolver), BearerTokenAuthenticationFilter.class)
+                .addFilterAfter(new AdminWriteRateLimitFilter(adminWriteRateLimiter, reviewWriteRateLimiter,
+                        handlerExceptionResolver, localeResolver), TimeEntryRateLimitFilter.class)
                 .exceptionHandling(e -> e
                         .authenticationEntryPoint(entryPoint)
                         .accessDeniedHandler(deniedHandler));

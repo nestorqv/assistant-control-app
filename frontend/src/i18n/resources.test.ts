@@ -49,6 +49,9 @@ const ADMIN_SAME_IN_BOTH: string[] = [
   'admin.evidence.pairValue',
   'admin.evidence.source.TABLET', // "Tablet"
   'admin.review.distance',
+  'admin.employees.no', // "No"
+  'admin.pin.spoken', // "PIN: {digits}"
+  'admin.schedule.errorSummaryItem', // "{day}: {message}"
 ]
 
 test('admin: es and en have the same keys, texts and placeholders', () => {

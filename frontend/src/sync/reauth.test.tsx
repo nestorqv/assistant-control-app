@@ -73,13 +73,13 @@ describe('token expired with an entry waiting', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Ingresar' }))
 
     await waitFor(() => expect(posts).toHaveLength(1))
-    expect(logins).toEqual([{ companyCode: 'DEMO', employeeCode: '1001', pin: PIN }])
+    expect((logins as { pin: string }[]).map((l) => ({ ...l, pin: l.pin === PIN }))).toEqual([{ companyCode: 'DEMO', employeeCode: '1001', pin: true }])
     expect(posts[0]).toEqual({ auth: 'Bearer token-2', uuid: 'cu-keep' })
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
     expect(await listAll()).toEqual([])
     // Announcements are read one after another: "signed in" first, then the delivery.
     await waitFor(() => expect(screen.getByRole('status').textContent).toContain('Salida registrada'), { timeout: 4000 })
-    expect(JSON.stringify({ ...sessionStorage })).not.toContain(PIN)
+    expect(JSON.stringify({ ...sessionStorage }).includes(PIN), 'the session storage carries the PIN').toBe(false)
   })
 
   test('a wrong PIN keeps the dialog and the entry, clears the PIN and shows the credentials text', async () => {

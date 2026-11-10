@@ -9,7 +9,11 @@ public record AdminProperties(int maxDashboardRows, RateLimits rateLimit) {
     public record Limit(int maxAttempts, Duration window) {
     }
 
-    /** Per admin: photo views, Excel exports, and PIN reset plus employee creation. */
-    public record RateLimits(Limit photo, Limit export, Limit account) {
+    /**
+     * Per admin: photo views, Excel exports, PIN reset plus employee creation, the two write budgets (general
+     * management writes; review actions and admin-created entries) and the entry detail (carries GPS).
+     */
+    public record RateLimits(Limit photo, Limit export, Limit account, Limit write, Limit reviewWrite,
+            Limit detail) {
     }
 }

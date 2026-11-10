@@ -62,6 +62,33 @@ public class AdminClient {
         return mockMvc.perform(builder);
     }
 
+    public ResultActions put(String token, String path, Object body) throws Exception {
+        var builder = MockMvcRequestBuilders.put(path).contentType(MediaType.APPLICATION_JSON)
+                .content(mapper.writeValueAsString(body));
+        if (token != null) {
+            builder.header("Authorization", "Bearer " + token);
+        }
+        return mockMvc.perform(builder);
+    }
+
+    /** POST with no body at all (unlock, and a PIN reset without a reason). */
+    public ResultActions postEmpty(String token, String path) throws Exception {
+        var builder = MockMvcRequestBuilders.post(path);
+        if (token != null) {
+            builder.header("Authorization", "Bearer " + token);
+        }
+        return mockMvc.perform(builder);
+    }
+
+    /** POST of a hand-written JSON text (values Jackson would not produce, e.g. the string "NaN"). */
+    public ResultActions postRaw(String token, String path, String json) throws Exception {
+        var builder = MockMvcRequestBuilders.post(path).contentType(MediaType.APPLICATION_JSON).content(json);
+        if (token != null) {
+            builder.header("Authorization", "Bearer " + token);
+        }
+        return mockMvc.perform(builder);
+    }
+
     public JsonNode json(ResultActions result) throws Exception {
         return mapper.readTree(result.andReturn().getResponse().getContentAsString());
     }

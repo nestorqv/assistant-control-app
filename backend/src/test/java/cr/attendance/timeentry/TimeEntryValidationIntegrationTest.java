@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.ResultActions;
 
 @IntegrationTest
@@ -37,6 +38,9 @@ class TimeEntryValidationIntegrationTest {
 
     @Autowired
     private TestData data;
+
+    @Autowired
+    private JdbcTemplate jdbc;
 
     @BeforeEach
     void startOfWorkDay() {
@@ -96,6 +100,15 @@ class TimeEntryValidationIntegrationTest {
         CheckInClient.Actor branchAdmin = client.adminWithBranch(tenant);
         client.post(branchAdmin, client.form("CLOCK_IN", clock.instant()), TestImages.jpeg())
                 .andExpect(status().isCreated());
+    }
+
+    @Test
+    void anEmployeeWhoseBranchWasRetiredCannotClockInEvenIfOperatorSqlLeftThemOnIt() throws Exception {
+        CheckInClient.Actor actor = client.actor();
+        jdbc.update("update branch set active = false where id = ?", actor.tenant().branchId());
+        assertError(client.post(actor, client.form("CLOCK_IN", clock.instant()), TestImages.jpeg()), 403,
+                "NO_BRANCH_ASSIGNED");
+        assertNothingWritten(actor);
     }
 
     @Test

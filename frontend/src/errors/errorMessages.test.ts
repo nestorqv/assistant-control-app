@@ -61,3 +61,20 @@ describe('describeError for rate limits', () => {
     expect(retryAfterOf(new ApiProblem(503, 'SERVER_BUSY', 30))).toBeUndefined()
   })
 })
+
+describe('Stage 4b codes', () => {
+  test('RATE_LIMITED with Retry-After 600 is "10 min" and without it the generic text', () => {
+    expect(describeError(new ApiProblem(429, 'RATE_LIMITED', 600), t)).toContain('10 min')
+    expect(describeError(new ApiProblem(429, 'RATE_LIMITED'), t)).toBe(es['error.RATE_LIMITED'])
+  })
+
+  test('RECORD_CHANGED and ADMIN_PIN_RESET_NOT_ALLOWED use "usted" in Spanish and exist in English', () => {
+    for (const key of ['error.RECORD_CHANGED', 'error.ADMIN_PIN_RESET_NOT_ALLOWED'] as const) {
+      expect(es[key]).not.toMatch(/\b(puedes|tu|tus)\b/i)
+      expect(en[key]).not.toBe(es[key])
+    }
+    expect(es['error.RECORD_CHANGED']).toContain('Recargue')
+    expect(es['error.ADMIN_PIN_RESET_NOT_ALLOWED']).toContain('No se puede restablecer')
+    expect(messageKeyFor(new ApiProblem(409, 'RECORD_CHANGED'))).toBe('error.RECORD_CHANGED')
+  })
+})

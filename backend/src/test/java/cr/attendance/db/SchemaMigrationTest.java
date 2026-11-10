@@ -27,7 +27,7 @@ class SchemaMigrationTest {
         List<String> versions = jdbc.queryForList(
                 "select version from flyway_schema_history where success and version is not null order by installed_rank",
                 String.class);
-        assertThat(versions).contains("1", "2", "3");
+        assertThat(versions).contains("1", "2", "3", "4", "5");
     }
 
     @Test

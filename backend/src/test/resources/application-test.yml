@@ -11,3 +11,8 @@ app:
   time-entry:
     rate-limit:
       max-attempts: 100000
+  admin:
+    rate-limit:
+      write: {max-attempts: 100000, window: 10m}
+      review-write: {max-attempts: 100000, window: 10m}
+      account: {max-attempts: 100000, window: 10m}

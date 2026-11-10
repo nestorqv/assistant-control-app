@@ -35,6 +35,14 @@ public class AuditLogEntry {
     @Column(name = "details", length = 500)
     private String details;
 
+    // Optional reason of an admin action (4b: PIN reset). Language-neutral code plus a short note without
+    // digit runs. Never a PIN, a name or a code.
+    @Column(name = "reason_code", length = 30)
+    private String reasonCode;
+
+    @Column(name = "reason_note", length = 200)
+    private String reasonNote;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
@@ -43,6 +51,13 @@ public class AuditLogEntry {
 
     public AuditLogEntry(Long companyId, Long actorId, String action, String targetType, Long targetId,
             String details, Instant createdAt) {
+        this(companyId, actorId, action, targetType, targetId, details, null, null, createdAt);
+    }
+
+    public AuditLogEntry(Long companyId, Long actorId, String action, String targetType, Long targetId,
+            String details, String reasonCode, String reasonNote, Instant createdAt) {
+        this.reasonCode = reasonCode;
+        this.reasonNote = reasonNote;
         this.companyId = companyId;
         this.actorId = actorId;
         this.action = action;
@@ -78,6 +93,14 @@ public class AuditLogEntry {
 
     public String getDetails() {
         return details;
+    }
+
+    public String getReasonCode() {
+        return reasonCode;
+    }
+
+    public String getReasonNote() {
+        return reasonNote;
     }
 
     public Instant getCreatedAt() {

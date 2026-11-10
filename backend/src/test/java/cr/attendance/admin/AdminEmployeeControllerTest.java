@@ -1,4 +1,4 @@
-package cr.attendance.employee;
+package cr.attendance.admin;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -53,7 +53,7 @@ class AdminEmployeeControllerTest {
         assertThat(json).contains("\"id\":" + adminA.id(), "\"id\":" + empA.id());
         assertThat(json).doesNotContain("\"id\":" + empB.id());
         assertThat(json).doesNotContainIgnoringCase("pinHash").doesNotContain("failedAttempts")
-                .doesNotContain("lockedUntil").doesNotContain("$2");
+                .doesNotContain("tokenVersion").doesNotContain("$2");
     }
 
     @Test

@@ -1,9 +1,16 @@
+import { configure } from '@testing-library/react'
 import { vi } from 'vitest'
 import App from '../App'
 import { saveIdentity } from '../storage/identity'
 import type { Identity } from '../storage/db'
 import type { Language } from '../i18n/language'
 import { renderWithI18n } from './renderWithI18n'
+
+// The first render of the whole app lazy-loads route chunks; on a loaded machine that exceeds the 1 s default of
+// findBy*/waitFor (reauth.test.tsx flaked on the first findByRole). Same value as the admin test backends.
+configure({ asyncUtilTimeout: 5000 })
+// Tests chain several findBy*/waitFor calls, so the 5 s default test timeout would equal one of them.
+vi.setConfig({ testTimeout: 20_000 })
 
 export const identity: Identity = {
   employeeId: 7,

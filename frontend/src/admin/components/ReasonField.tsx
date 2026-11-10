@@ -1,5 +1,6 @@
 import { useId, useState, type Ref } from 'react'
 import { useAdminI18n } from '../adminI18n'
+import { hasUnsafeText } from '../text'
 
 export type ReasonPreset =
   | 'verifiedPhoto'
@@ -26,9 +27,10 @@ export function normalizeReason(text: string): string {
   return text.replace(/\s+/g, ' ').trim()
 }
 
+/** Length and, like the server (audit finding L-1), no invisible, bidi, zero-width or other control characters. */
 export function isReasonValid(text: string): boolean {
-  const length = normalizeReason(text).length
-  return length >= MIN_REASON && length <= MAX_REASON
+  const cleaned = normalizeReason(text)
+  return cleaned.length >= MIN_REASON && cleaned.length <= MAX_REASON && !hasUnsafeText(cleaned)
 }
 
 type Props = {
@@ -48,6 +50,8 @@ export function ReasonField({ value, onChange, presets, error, readOnly, autoFoc
   const hintId = `${id}-hint`
   const errorId = `${id}-error`
   const [filled, setFilled] = useState('')
+  // Invisible characters get their own inline message at once, before the form is submitted.
+  const shownError = hasUnsafeText(normalizeReason(value)) ? t('admin.text.invisibleChars') : error
   return (
     <div className="field adm-reason">
       <label htmlFor={id}>
@@ -84,17 +88,17 @@ export function ReasonField({ value, onChange, presets, error, readOnly, autoFoc
         value={value}
         readOnly={readOnly}
         aria-required="true"
-        aria-invalid={error ? true : undefined}
-        aria-describedby={error ? `${hintId} ${errorId}` : hintId}
+        aria-invalid={shownError ? true : undefined}
+        aria-describedby={shownError ? `${hintId} ${errorId}` : hintId}
         data-autofocus={autoFocus ? '' : undefined}
         onChange={(event) => onChange(event.target.value)}
       />
       <p className="adm-counter" aria-hidden="true">
         {value.length} / {MAX_REASON}
       </p>
-      {error && (
+      {shownError && (
         <p className="field__error" id={errorId} role="alert">
-          {error}
+          {shownError}
         </p>
       )}
       <span className="visually-hidden" aria-live="polite">

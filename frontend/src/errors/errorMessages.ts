@@ -37,6 +37,9 @@ export const ERROR_CODE_KEYS = {
   SELF_CHANGE_NOT_ALLOWED: 'error.SELF_CHANGE_NOT_ALLOWED',
   DATE_RANGE_TOO_LARGE: 'error.DATE_RANGE_TOO_LARGE',
   REPORT_TOO_LARGE: 'error.REPORT_TOO_LARGE',
+  RATE_LIMITED: 'error.RATE_LIMITED',
+  RECORD_CHANGED: 'error.RECORD_CHANGED',
+  ADMIN_PIN_RESET_NOT_ALLOWED: 'error.ADMIN_PIN_RESET_NOT_ALLOWED',
 } as const satisfies Record<string, MessageKey>
 
 export const CLIENT_ERROR_KEYS = [
@@ -61,10 +64,11 @@ export function messageKeyFor(error: unknown): MessageKey {
   return 'error.unknown'
 }
 
-/** The text to show. A 429 with Retry-After becomes "try again in N min" (rounded up) or in seconds. */
+/** The text to show. Any 429 with Retry-After becomes "try again in N min" (rounded up) or in seconds. */
 export function describeError(error: unknown, t: Translate): string {
   const key = messageKeyFor(error)
-  if (key === 'error.TOO_MANY_ATTEMPTS' && error instanceof ApiProblem && error.retryAfterSeconds !== undefined) {
+  const limited = key === 'error.TOO_MANY_ATTEMPTS' || key === 'error.RATE_LIMITED'
+  if (limited && error instanceof ApiProblem && error.status === 429 && error.retryAfterSeconds !== undefined) {
     const seconds = error.retryAfterSeconds
     return seconds >= 60
       ? t('error.tooManyAttemptsMinutes', { minutes: Math.ceil(seconds / 60) })

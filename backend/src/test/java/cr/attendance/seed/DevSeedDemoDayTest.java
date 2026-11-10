@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.MockMvcPrint;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.system.CapturedOutput;
@@ -31,8 +32,10 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
 /** The opt-in demo day (DEV_SEED_DEMO_DAY=true): today's blueprint entries, added once. */
-@SpringBootTest(properties = {"app.seed.pin=" + DevSeedDemoDayTest.SEED_PIN, "app.seed.demo-day=true"})
-@AutoConfigureMockMvc
+@SpringBootTest(properties = {"app.seed.pin=" + DevSeedDemoDayTest.SEED_PIN, "app.seed.demo-day=true",
+        // All five seed properties are pinned: a developer's backend/.env (DEV_SEED_*) must not change what is seeded.
+        "app.seed.branch-latitude=", "app.seed.branch-longitude=", "app.seed.branch-radius-meters="})
+@AutoConfigureMockMvc(print = MockMvcPrint.NONE)
 @AutoConfigureEmbeddedDatabase(type = DatabaseType.POSTGRES, provider = DatabaseProvider.ZONKY)
 @ActiveProfiles({"test", "dev"})
 @ExtendWith(OutputCaptureExtension.class)
@@ -82,8 +85,8 @@ class DevSeedDemoDayTest {
         seeder.run(null);
         assertThat(count("select count(*) from time_entry")).isEqualTo(10);
         // Counts only in the log: no names, no coordinates.
-        assertThat(output.getAll()).contains("Dev seed demo day: today already has entries")
-                .doesNotContain(SEED_PIN).doesNotContain("María Rojas");
+        assertThat(output.getAll()).contains("Dev seed demo day: today already has entries").doesNotContain("María Rojas");
+        assertThat(output.getAll().contains(SEED_PIN)).as("the logs carry the seed PIN").isFalse();
     }
 
     @Test

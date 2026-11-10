@@ -28,6 +28,21 @@ public class AdminRateLimits {
         return limiter(props.rateLimit().account());
     }
 
+    @Bean
+    FixedWindowRateLimiter adminWriteRateLimiter(AdminProperties props) {
+        return limiter(props.rateLimit().write());
+    }
+
+    @Bean
+    FixedWindowRateLimiter reviewWriteRateLimiter(AdminProperties props) {
+        return limiter(props.rateLimit().reviewWrite());
+    }
+
+    @Bean
+    FixedWindowRateLimiter detailRateLimiter(AdminProperties props) {
+        return limiter(props.rateLimit().detail());
+    }
+
     private static FixedWindowRateLimiter limiter(AdminProperties.Limit limit) {
         return new FixedWindowRateLimiter(limit.maxAttempts(), limit.window(), Ticker.systemTicker());
     }

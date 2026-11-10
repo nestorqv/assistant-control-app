@@ -5,7 +5,7 @@ import cr.attendance.common.AuditAction;
 import cr.attendance.common.AuditTargetType;
 import cr.attendance.common.EmployeePrincipal;
 import cr.attendance.common.FixedWindowRateLimiter;
-import cr.attendance.common.TooManyAttemptsException;
+import cr.attendance.common.RateLimitedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -45,7 +45,7 @@ public class AdminTimeEntryPhotoController {
     public ResponseEntity<Resource> photo(@AuthenticationPrincipal EmployeePrincipal principal,
             @PathVariable Long timeEntryId) {
         if (!limiter.tryAcquire(principal.companyId() + ":" + principal.employeeId())) {
-            throw new TooManyAttemptsException(limiter.retryAfter());
+            throw new RateLimitedException(limiter.retryAfter());
         }
         Resource photo = photoService.photoFor(principal.companyId(), null, timeEntryId);
         auditService.record(principal.companyId(), principal.employeeId(), AuditAction.PHOTO_VIEW,

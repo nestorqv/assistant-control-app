@@ -52,6 +52,12 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
                 String.valueOf(e.getRetryAfter().toSeconds()));
     }
 
+    @ExceptionHandler(RateLimitedException.class)
+    ResponseEntity<ProblemDetail> rateLimited(RateLimitedException e) {
+        return respond(HttpStatus.TOO_MANY_REQUESTS, ErrorCode.RATE_LIMITED,
+                String.valueOf(e.getRetryAfter().toSeconds()));
+    }
+
     @ExceptionHandler(InvalidPinException.class)
     ResponseEntity<ProblemDetail> invalidPin() {
         return respond(HttpStatus.BAD_REQUEST, ErrorCode.INVALID_PIN, null);

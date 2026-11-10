@@ -67,12 +67,12 @@ public class LoginService {
         }
         if (locked) {
             log.warn("Login rejected: locked account, company={}, employee={}, ip={}",
-                    company.get().getCode(), employee.getCode(), ip);
+                    company.get().getId(), employee.getId(), ip);
             throw new InvalidCredentialsException();
         }
         if (!employee.isActive() || !company.get().isActive()) {
             log.warn("Login rejected: inactive account, company={}, employee={}, ip={}",
-                    company.get().getCode(), employee.getCode(), ip);
+                    company.get().getId(), employee.getId(), ip);
             throw new InvalidCredentialsException();
         }
         if (!pinMatches) {
@@ -80,7 +80,7 @@ public class LoginService {
             employeeRepository.recordFailedLogin(employee.getId(), employee.getCompanyId(),
                     lockout.maxAttempts(), now.plus(lockout.duration()), now);
             log.warn("Login failed: wrong PIN, company={}, employee={}, ip={}",
-                    company.get().getCode(), employee.getCode(), ip);
+                    company.get().getId(), employee.getId(), ip);
             throw new InvalidCredentialsException();
         }
 
@@ -88,7 +88,7 @@ public class LoginService {
         // atomically, so a correct guess that raced a concurrent lock gets no token and clears nothing.
         if (employeeRepository.recordSuccessfulLogin(employee.getId(), employee.getCompanyId(), now) == 0) {
             log.warn("Login rejected: account locked during the attempt, company={}, employee={}, ip={}",
-                    company.get().getCode(), employee.getCode(), ip);
+                    company.get().getId(), employee.getId(), ip);
             throw new InvalidCredentialsException();
         }
         TokenService.IssuedToken issued = tokenService.issue(employee);

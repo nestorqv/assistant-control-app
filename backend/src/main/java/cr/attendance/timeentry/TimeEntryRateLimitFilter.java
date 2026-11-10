@@ -15,6 +15,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 import org.springframework.web.servlet.LocaleResolver;
+import org.springframework.web.util.UrlPathHelper;
 
 /**
  * Per-employee limit on POST /api/time-entries. Runs inside the Spring Security chain right after the
@@ -40,7 +41,7 @@ public class TimeEntryRateLimitFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        return !"POST".equals(request.getMethod()) || !PATH.equals(request.getRequestURI());
+        return !"POST".equals(request.getMethod()) || !PATH.equals(UrlPathHelper.defaultInstance.getPathWithinApplication(request));
     }
 
     @Override

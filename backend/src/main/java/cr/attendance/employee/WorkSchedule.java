@@ -54,6 +54,15 @@ public class WorkSchedule {
         this.graceMinutes = graceMinutes;
     }
 
+    public boolean change(LocalTime newStart, LocalTime newEnd, Integer newGraceMinutes) {
+        boolean changed = !startTime.equals(newStart) || !endTime.equals(newEnd)
+                || !graceMinutes.equals(newGraceMinutes);
+        startTime = newStart;
+        endTime = newEnd;
+        graceMinutes = newGraceMinutes;
+        return changed;
+    }
+
     public Long getId() {
         return id;
     }

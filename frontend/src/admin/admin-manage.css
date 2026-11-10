@@ -1,0 +1,379 @@
+/* Admin panel: management screens (branches, employees, schedules). Imported by AdminApp (admin chunk only). */
+
+/* Select and textarea inside the shared .field wrapper (index.css styles only inputs). */
+.field select,
+.field textarea {
+  min-height: var(--target-input);
+  padding: var(--space-2) var(--space-3);
+  font: inherit;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.field select {
+  padding-block: 0;
+}
+
+.field textarea {
+  min-height: 5rem;
+  resize: vertical;
+}
+
+.field select[aria-invalid='true'],
+.field textarea[aria-invalid='true'] {
+  border-color: var(--color-error);
+}
+
+.field textarea:disabled,
+.field select:disabled {
+  background: var(--color-info-bg);
+}
+
+.adm-uppercase {
+  text-transform: uppercase;
+}
+
+.adm-fixed-value {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Panels and forms */
+.adm-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.adm-section h2 {
+  margin: 0;
+}
+
+.adm-form-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.adm-form-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+@media (max-width: 24rem) {
+  .adm-form-pair {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.adm-note {
+  align-items: flex-start;
+}
+
+.adm-maps-check {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.adm-maps-check [aria-disabled='true'] {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.adm-two-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+}
+
+@media (min-width: 64rem) {
+  .adm-two-columns {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+}
+
+.adm-heading__chips,
+.adm-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.adm-access-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.adm-last-reset p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Native radio groups (role, PIN-reset reason) */
+.adm-reason-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.adm-reason-group legend {
+  padding: 0;
+  font-weight: 600;
+}
+
+.adm-reason-group .adm-check {
+  min-height: var(--target-min);
+}
+
+.adm-reason-group input[type='radio'] {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+/* Status filter of the employee list: a bordered segment per radio, checked = fill + weight + underline */
+.adm-segmented {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.adm-segmented legend {
+  padding: 0;
+  font-weight: 600;
+}
+
+.adm-segmented label {
+  position: relative;
+}
+
+.adm-segmented input {
+  position: absolute;
+  opacity: 0;
+  inset: 0;
+}
+
+.adm-segmented span {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--target-ctl);
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.adm-segmented input:checked + span {
+  background: var(--color-primary);
+  color: #fff;
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.adm-segmented input:focus-visible + span {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+@media (forced-colors: active) {
+  .adm-segmented input:checked + span {
+    background: Highlight;
+    color: HighlightText;
+  }
+}
+
+/* Lists on small screens and row actions */
+.adm-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.adm-card-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow-wrap: anywhere;
+}
+
+.adm-card-item h3 {
+  margin: 0;
+}
+
+.adm-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+@media (max-width: 47.9375rem) {
+  .adm-row-actions .button,
+  .adm-access-actions .button {
+    width: 100%;
+  }
+}
+
+/* Weekly schedule */
+.adm-schedule-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.adm-schedule-copy,
+.adm-schedule-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.adm-schedule th,
+.adm-schedule td {
+  padding: 0.5rem 0.75rem;
+}
+
+.adm-schedule input[type='time'],
+.adm-schedule input[type='text'] {
+  min-height: 40px;
+  padding: 0 var(--space-2);
+  font: inherit;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.adm-schedule input[type='checkbox'] {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.adm-schedule input[type='text'] {
+  width: 5rem;
+}
+
+.adm-schedule__row--error {
+  border-left: 2px solid var(--color-error);
+}
+
+.adm-schedule__note {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--color-text-muted);
+}
+
+.adm-schedule-cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.adm-schedule__day {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.adm-schedule__day input[type='time'],
+.adm-schedule__day input[type='text'] {
+  min-height: var(--target-input);
+  width: 100%;
+  padding: 0 var(--space-2);
+  font: inherit;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.adm-schedule__times {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+@media (max-width: 22rem) {
+  .adm-schedule__times {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.adm-schedule-summary ul {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+/* One-time PIN reveal */
+.adm-pin__panel {
+  padding: var(--space-4);
+  background: var(--color-info-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.adm-pin__digits {
+  display: flex;
+  justify-content: center;
+  gap: 1.25ch;
+  margin: 0;
+  font-family: ui-monospace, monospace;
+  font-size: 2rem;
+  letter-spacing: 0.12em;
+  white-space: nowrap;
+  user-select: all;
+}
+
+@media (max-width: 30rem) {
+  .adm-pin__digits {
+    font-size: 1.75rem;
+  }
+}
+
+@media (forced-colors: active) {
+  .adm-pin__panel {
+    border-color: ButtonText;
+  }
+}
+
+.adm-pin__confirm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.adm-pin .button {
+  align-self: flex-start;
+}
+
+@media (max-width: 47.9375rem) {
+  .adm-pin .button {
+    width: 100%;
+  }
+}

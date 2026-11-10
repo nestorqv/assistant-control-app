@@ -3,6 +3,7 @@ package cr.attendance.config;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import cr.attendance.support.AdminClient;
@@ -130,7 +131,19 @@ class AdminMethodSecurityTest {
                 "POST /api/admin/time-entries",
                 "POST /api/admin/time-entries/1/approve",
                 "POST /api/admin/time-entries/1/reject",
-                "POST /api/admin/time-entries/1/correct");
+                "POST /api/admin/time-entries/1/correct",
+                "POST /api/admin/branches",
+                "PUT /api/admin/branches/1",
+                "POST /api/admin/branches/1/activate",
+                "POST /api/admin/branches/1/deactivate",
+                "POST /api/admin/employees",
+                "PUT /api/admin/employees/1",
+                "POST /api/admin/employees/1/activate",
+                "POST /api/admin/employees/1/deactivate",
+                "POST /api/admin/employees/1/pin-reset",
+                "POST /api/admin/employees/1/unlock",
+                "GET /api/admin/employees/1/schedule",
+                "PUT /api/admin/employees/1/schedule");
     }
 
     @ParameterizedTest
@@ -139,7 +152,11 @@ class AdminMethodSecurityTest {
         String[] route = routeText.split(" ");
         TestData.Tenant tenant = data.tenant();
         String token = admins.tokenFor(tenant, data.user(tenant, "EMPLOYEE"));
-        var builder = "GET".equals(route[0]) ? get(route[1]) : post(route[1]).contentType(MediaType.APPLICATION_JSON).content("{}");
+        var builder = switch (route[0]) {
+            case "GET" -> get(route[1]);
+            case "PUT" -> put(route[1]).contentType(MediaType.APPLICATION_JSON).content("{}");
+            default -> post(route[1]).contentType(MediaType.APPLICATION_JSON).content("{}");
+        };
         String content = mockMvc.perform(builder.header("Authorization", "Bearer " + token))
                 .andExpect(status().isForbidden()).andReturn().getResponse().getContentAsString();
         assertThat(content).isEmpty();

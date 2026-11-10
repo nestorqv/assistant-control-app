@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.MockMvcPrint;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
@@ -29,8 +30,10 @@ import org.springframework.test.web.servlet.MockMvc;
  * DevSeedEnabledTest so it gets its own context and its own embedded database.
  */
 // demo-day pinned off so a developer's backend/.env (DEV_SEED_DEMO_DAY=true) cannot change the seeded rows.
-@SpringBootTest(properties = {"app.seed.pin=" + DevSeedContentTest.SEED_PIN, "app.seed.demo-day=false"})
-@AutoConfigureMockMvc
+@SpringBootTest(properties = {"app.seed.pin=" + DevSeedContentTest.SEED_PIN, "app.seed.demo-day=false",
+        // All five seed properties are pinned: a developer's backend/.env (DEV_SEED_*) must not change what is seeded.
+        "app.seed.branch-latitude=", "app.seed.branch-longitude=", "app.seed.branch-radius-meters="})
+@AutoConfigureMockMvc(print = MockMvcPrint.NONE)
 @AutoConfigureEmbeddedDatabase(type = DatabaseType.POSTGRES, provider = DatabaseProvider.ZONKY)
 @ActiveProfiles({"test", "dev"})
 @ExtendWith(OutputCaptureExtension.class)
@@ -65,7 +68,8 @@ class DevSeedContentTest {
         seeder.run(null);
 
         assertThat(output.getAll()).contains("Dev seed created: company DEMO, 13 employees");
-        assertThat(output.getAll()).doesNotContain(SEED_PIN).doesNotContain("$2a$").doesNotContain("$2b$");
+        assertThat(output.getAll().contains(SEED_PIN)).as("the logs carry the seed PIN").isFalse();
+        assertThat(output.getAll()).doesNotContain("$2a$").doesNotContain("$2b$");
         assertThat(jdbc.queryForObject("select count(*) from employee", Integer.class)).isEqualTo(13);
         assertThat(jdbc.queryForObject("select count(*) from work_schedule", Integer.class)).isEqualTo(65);
     }

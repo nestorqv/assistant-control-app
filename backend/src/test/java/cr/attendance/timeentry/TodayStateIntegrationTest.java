@@ -65,6 +65,15 @@ class TodayStateIntegrationTest {
     }
 
     @Test
+    void anEmployeeWhoseBranchWasRetiredIsBlockedLikeOneWithoutABranch() throws Exception {
+        CheckInClient.Actor actor = client.actor();
+        jdbc.update("update branch set active = false where id = ?", actor.tenant().branchId());
+        JsonNode body = today(actor);
+        assertThat(body.get("blockedReason").asText()).isEqualTo("NO_BRANCH_ASSIGNED");
+        assertThat(body.get("nextAction").asText()).isEqualTo("NONE");
+    }
+
+    @Test
     void aReadyEmployeeSeesTheScheduleOfTheirWorkDateAndTheBranchWithoutCoordinates() throws Exception {
         CheckInClient.Actor actor = client.actor();
         int isoDay = clock.instant().atZone(CR).getDayOfWeek().getValue();

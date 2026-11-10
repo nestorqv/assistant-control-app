@@ -5,9 +5,14 @@ spring:
   config:
     import: optional:file:.env[.properties]
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/asistencia}
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/asistencia?logServerErrorDetail=false}
     username: ${DB_USER:asistencia_app}
     password: ${DB_PASSWORD:}
+    hikari:
+      data-source-properties:
+        # PgJDBC puts "Detail: Key (company_id, code)=(...)" (and failing rows) into exceptions and logs by default.
+        # Employee codes and names are PII: keep only the constraint name in the message. Applies whatever DB_URL is.
+        logServerErrorDetail: "false"
   jpa:
     open-in-view: false
     hibernate:
@@ -76,6 +81,15 @@ app:
       photo: {max-attempts: 300, window: 10m}
       export: {max-attempts: 10, window: 10m}
       account: {max-attempts: 30, window: 10m}
+      write: {max-attempts: 120, window: 10m}         # every admin POST/PUT/PATCH/DELETE except the review budget
+      review-write: {max-attempts: 300, window: 10m}  # approve / reject / correct / admin-created entries
+      detail: {max-attempts: 300, window: 10m}        # entry detail (carries GPS)
+
+logging:
+  level:
+    # Logs SQL errors with the driver message before the facades map them; the facades and the exception
+    # handler log what is needed (constraint name and class only).
+    org.hibernate.engine.jdbc.spi.SqlExceptionHelper: "OFF"
 
 server:
   port: 8080

@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.MockMvcPrint;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
@@ -26,7 +27,7 @@ import org.springframework.test.context.ActiveProfiles;
 @SpringBootTest(properties = {"app.seed.pin=" + DevSeedLocationTest.SEED_PIN,
     "app.seed.branch-latitude=10.5", "app.seed.branch-longitude=-83.25", "app.seed.branch-radius-meters=250",
     "app.seed.demo-day=false"})
-@AutoConfigureMockMvc
+@AutoConfigureMockMvc(print = MockMvcPrint.NONE)
 @AutoConfigureEmbeddedDatabase(type = DatabaseType.POSTGRES, provider = DatabaseProvider.ZONKY)
 @ActiveProfiles({"test", "dev"})
 @ExtendWith(OutputCaptureExtension.class)
@@ -78,7 +79,7 @@ class DevSeedLocationTest {
         assertThat(((Number) updated.get("radius_meters")).intValue()).isEqualTo(400);
         assertThat(jdbc.queryForObject("select count(*) from employee", Integer.class)).isEqualTo(13);
 
-        assertThat(output.getAll()).contains("Dev seed: branch location updated")
-                .doesNotContain(SEED_PIN);
+        assertThat(output.getAll()).contains("Dev seed: branch location updated");
+        assertThat(output.getAll().contains(SEED_PIN)).as("the logs carry the seed PIN").isFalse();
     }
 }

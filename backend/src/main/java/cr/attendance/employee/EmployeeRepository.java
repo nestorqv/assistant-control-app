@@ -26,6 +26,32 @@ public interface EmployeeRepository extends Repository<Employee, Long> {
 
     List<Employee> findAllByCompanyIdOrderByName(Long companyId);
 
+    // Codes are never reused, not even by a deactivated employee.
+    boolean existsByCompanyIdAndCode(Long companyId, String code);
+
+    // Only active employees block deactivating a branch.
+    long countByCompanyIdAndBranchIdAndActiveTrue(Long companyId, Long branchId);
+
+    /** The calling admin as read under FOR KEY SHARE (a projection: the entity is not loaded). */
+    interface ActorRow {
+        String getRole();
+
+        boolean getActive();
+    }
+
+    // Lock order step 1 (employee PUT / activate / deactivate only): every active admin of the company, by id,
+    // FOR NO KEY UPDATE. That mode does not conflict with the FOR KEY SHARE that audit, adjustment and
+    // time_entry inserts take on the rows they reference, so concurrent reviews and clock-ins do not stall.
+    @Query(value = "select id from employee where company_id = :companyId and role = 'ADMIN' and active = true "
+            + "order by id for no key update", nativeQuery = true)
+    List<Long> lockActiveAdminIds(@Param("companyId") Long companyId);
+
+    // Lock order step 2: the acting admin FOR KEY SHARE. Conflicts only with FOR UPDATE, so it queues behind a
+    // writer that is changing this very row and makes the later audit FK check non-blocking.
+    @Query(value = "select role as role, active as active from employee where id = :id and company_id = :companyId "
+            + "for key share", nativeQuery = true)
+    Optional<ActorRow> lockActorForKeyShare(@Param("id") Long id, @Param("companyId") Long companyId);
+
     // Dashboard rows: everyone who can clock in (active, with a branch). Admins without a branch have no entries.
     List<Employee> findAllByCompanyIdAndActiveTrueAndBranchIdIsNotNull(Long companyId);
 

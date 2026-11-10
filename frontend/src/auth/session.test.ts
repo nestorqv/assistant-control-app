@@ -45,7 +45,7 @@ describe('storage layout', () => {
       await db.getAll('outbox'),
       await db.getAll('snapshot'),
     ])
-    expect(everything).not.toContain(PIN)
+    expect(JSON.stringify(everything).includes(PIN), 'the stored data carries the PIN').toBe(false)
   })
 
   test('the last company code is remembered in localStorage', async () => {

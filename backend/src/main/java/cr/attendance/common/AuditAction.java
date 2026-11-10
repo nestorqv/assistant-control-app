@@ -3,6 +3,7 @@ package cr.attendance.common;
 /** What an admin did. The database only checks the format (^[A-Z_]{3,40}$), so a new value needs no migration. */
 public enum AuditAction {
     PHOTO_VIEW,
+    LOCATION_VIEW,
     REPORT_EXPORT,
     EMPLOYEE_CREATE,
     EMPLOYEE_UPDATE,

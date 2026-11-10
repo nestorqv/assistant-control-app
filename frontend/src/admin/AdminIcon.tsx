@@ -48,6 +48,16 @@ const ADMIN_PATHS = {
     </>
   ),
   'layout-dashboard': <path d="M4 4h7v9H4zM13 4h7v5h-7zM13 11h7v9h-7zM4 15h7v5H4z" />,
+  users: (
+    <>
+      <circle cx="9" cy="8" r="3.5" />
+      <path d="M2.5 20v-1a4.5 4.5 0 014.5-4.5h4a4.5 4.5 0 014.5 4.5v1M16 4.8a3.5 3.5 0 010 6.4M21.5 20v-1a4.5 4.5 0 00-3-4.2" />
+    </>
+  ),
+  // Distinct from the 4a "local tablet" building: the branches nav item is a storefront.
+  branch: <path d="M3 9l1.5-5h15L21 9M3 9h18M3 9v1a3 3 0 006 0 3 3 0 006 0 3 3 0 006 0V9M5 13v7h14v-7M10 20v-4h4v4" />,
+  plus: <path d="M12 5v14M5 12h14" />,
+  lock: <path d="M6 11h12v9H6zM8.5 11V8a3.5 3.5 0 017 0v3" />,
 } as const
 
 export type AdminIconName = keyof typeof ADMIN_PATHS | IconName

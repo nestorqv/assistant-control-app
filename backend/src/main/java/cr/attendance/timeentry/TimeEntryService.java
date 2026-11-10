@@ -2,6 +2,7 @@ package cr.attendance.timeentry;
 
 import cr.attendance.common.ApiException;
 import cr.attendance.common.EmployeePrincipal;
+import cr.attendance.common.Constraints;
 import cr.attendance.common.ErrorCode;
 import cr.attendance.common.ResourceNotFoundException;
 import cr.attendance.employee.Employee;
@@ -67,16 +68,18 @@ public class TimeEntryService {
     // Backstop only: the employee row lock normally serializes duplicates before a constraint can fire.
     private TimeEntryResults.Result mapConstraintViolation(EmployeePrincipal principal, TimeEntryForm form,
             DataIntegrityViolationException e) {
-        String cause = String.valueOf(e.getMostSpecificCause().getMessage());
-        if (cause.contains("uq_time_entry_company_client_uuid")) {
+        String constraint = Constraints.nameOf(e);
+        if ("uq_time_entry_company_client_uuid".equals(constraint)) {
             TimeEntry winner = timeEntryRepository.findByCompanyIdAndClientUuid(principal.companyId(),
                     form.clientUuid()).orElseThrow(() -> e);
             return results.replayOrConflict(principal, form.type(), winner);
         }
-        if (cause.contains("uq_time_entry_employee_work_date_type")) {
+        if ("uq_time_entry_employee_work_date_type".equals(constraint)) {
             throw new ApiException(HttpStatus.CONFLICT, ErrorCode.ALREADY_CLOCKED_IN);
         }
-        log.error("Unexpected constraint violation while recording a time entry", e);
+        // Constraint name and class only: the driver message can carry row values (PII).
+        log.error("Unexpected constraint violation while recording a time entry constraint={} class={}",
+                constraint, e.getMostSpecificCause().getClass().getSimpleName());
         throw e;
     }
 }

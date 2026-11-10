@@ -21,8 +21,6 @@ import cr.attendance.timeentry.TimeEntryProperties;
 import cr.attendance.timeentry.TimeEntryRepository;
 import cr.attendance.timeentry.TimeEntryStatus;
 import cr.attendance.timeentry.TimeEntryType;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -39,9 +37,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * The transactional part of the review actions. Lock order is always the same: employee row first (the
- * row the PWA POST also locks), then the time entry. Adjustment rows are written in the same transaction as
- * the change, so either both exist or neither does. server_time and work_date are never touched.
+ * The transactional part of the review actions. Lock order is the shared AdminLocks protocol: the acting admin
+ * (FOR KEY SHARE) and the entry's employee (FOR UPDATE, the row the PWA POST also locks) in id order, then the
+ * time entry. The actor is re-checked under the lock (an admin demoted a moment ago gets an empty 403).
+ * Adjustment rows are written in the same transaction as the change, so either both exist or neither does.
+ * server_time and work_date are never touched.
  */
 @Service
 public class ReviewWriter {
@@ -56,15 +56,13 @@ public class ReviewWriter {
     private final WorkScheduleRepository workScheduleRepository;
     private final AdjustmentRepository adjustmentRepository;
     private final TimeEntryProperties props;
+    private final AdminLocks locks;
     private final Clock clock;
-
-    @PersistenceContext
-    private EntityManager entityManager;
 
     public ReviewWriter(TimeEntryRepository timeEntryRepository, EmployeeRepository employeeRepository,
             BranchRepository branchRepository, CompanyRepository companyRepository,
             WorkScheduleRepository workScheduleRepository, AdjustmentRepository adjustmentRepository,
-            TimeEntryProperties props, Clock clock) {
+            TimeEntryProperties props, AdminLocks locks, Clock clock) {
         this.timeEntryRepository = timeEntryRepository;
         this.employeeRepository = employeeRepository;
         this.branchRepository = branchRepository;
@@ -72,6 +70,7 @@ public class ReviewWriter {
         this.workScheduleRepository = workScheduleRepository;
         this.adjustmentRepository = adjustmentRepository;
         this.props = props;
+        this.locks = locks;
         this.clock = clock;
     }
 
@@ -156,10 +155,9 @@ public class ReviewWriter {
     @Transactional
     public Long create(EmployeePrincipal principal, ReviewRequests.Create request) {
         Long companyId = principal.companyId();
-        setLockTimeout();
+        locks.applyLockTimeout();
         // Same lock as the PWA POST: an admin-created entry and the employee's own clocking never interleave.
-        Employee employee = employeeRepository.findWithLockByIdAndCompanyId(request.employeeId(), companyId)
-                .orElseThrow(ResourceNotFoundException::new);
+        Employee employee = locks.lockActorAndTarget(companyId, principal.employeeId(), request.employeeId());
         if (employee.getBranchId() == null) {
             throw new ApiException(HttpStatus.CONFLICT, ErrorCode.NO_BRANCH_ASSIGNED);
         }
@@ -204,26 +202,22 @@ public class ReviewWriter {
         return saved.getId();
     }
 
-    /** Employee lock first, then the entry lock, then the expectedStatus check (409 ENTRY_CHANGED). */
+    /** Actor and employee locks first, then the entry lock, then the expectedStatus check (409 ENTRY_CHANGED). */
     private TimeEntry lockEntry(EmployeePrincipal principal, Long id, TimeEntryStatus expectedStatus) {
         Long companyId = principal.companyId();
-        setLockTimeout();
-        Long employeeId = timeEntryRepository.findEmployeeIdByIdAndCompanyId(id, companyId)
-                .orElseThrow(ResourceNotFoundException::new);
-        employeeRepository.findWithLockByIdAndCompanyId(employeeId, companyId)
-                .orElseThrow(ResourceNotFoundException::new);
+        locks.applyLockTimeout();
+        Long employeeId = timeEntryRepository.findEmployeeIdByIdAndCompanyId(id, companyId).orElse(null);
+        if (employeeId == null) {
+            locks.lockActor(companyId, principal.employeeId());
+            throw new ResourceNotFoundException();
+        }
+        locks.lockActorAndTarget(companyId, principal.employeeId(), employeeId);
         TimeEntry entry = timeEntryRepository.findWithLockByIdAndCompanyId(id, companyId)
                 .orElseThrow(ResourceNotFoundException::new);
         if (entry.getStatus() != expectedStatus) {
             throw new ApiException(HttpStatus.CONFLICT, ErrorCode.ENTRY_CHANGED);
         }
         return entry;
-    }
-
-    // Bounds the row-lock wait in SQL, like TimeEntryWriter. A timeout becomes 503 SERVER_BUSY.
-    private void setLockTimeout() {
-        entityManager.createNativeQuery("select set_config('lock_timeout', ?1, true)")
-                .setParameter(1, props.lockTimeout().toMillis() + "ms").getSingleResult();
     }
 
     private void record(EmployeePrincipal principal, TimeEntry entry, AdjustmentAction action, String reason,

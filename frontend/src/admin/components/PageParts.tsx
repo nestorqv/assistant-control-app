@@ -5,16 +5,19 @@ import { ErrorBox } from '../../components/ErrorBox'
 import { useAdminI18n } from '../adminI18n'
 import { adminErrorText, problemCode, problemStatus } from '../errors'
 
-/** One h1 per page: focused on navigation and mirrored into the document title (WCAG 2.4.2). */
-export function PageHeading({ title, children }: { title: string; children?: ReactNode }) {
+/**
+ * One h1 per page: focused on navigation and mirrored into the document title (WCAG 2.4.2). A page whose h1 is a
+ * person's name passes a generic `documentTitle`: a name never goes into the tab title.
+ */
+export function PageHeading({ title, documentTitle, children }: { title: string; documentTitle?: string; children?: ReactNode }) {
   const { t } = useAdminI18n()
   const ref = useRef<HTMLHeadingElement>(null)
   useEffect(() => {
     ref.current?.focus()
   }, [])
   useEffect(() => {
-    document.title = `${title} · ${t('admin.shell.title')}`
-  }, [title, t])
+    document.title = `${documentTitle ?? title} · ${t('admin.shell.title')}`
+  }, [title, documentTitle, t])
   return (
     <header className="adm-heading">
       <h1 ref={ref} tabIndex={-1} className="adm-h1">

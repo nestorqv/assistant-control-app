@@ -1,5 +1,6 @@
 package cr.attendance.admin;
 
+import cr.attendance.common.TextRules;
 import cr.attendance.timeentry.TimeEntryStatus;
 import cr.attendance.timeentry.TimeEntryType;
 import jakarta.validation.constraints.NotNull;
@@ -10,37 +11,34 @@ import java.time.LocalDate;
 
 /**
  * Request bodies of the review actions. Explicit records: nothing is bound to an entity and unknown properties
- * are ignored. The reason is trimmed first; control characters (tabs and line breaks too) are rejected.
+ * are ignored. The reason is NFC-normalized and stripped first (TextRules), then control, format (bidi,
+ * zero-width), surrogate and line/paragraph separator characters are rejected (audit finding L-1).
  */
 public final class ReviewRequests {
 
-    static final String NO_CONTROL_CHARACTERS = "^[^\\p{Cc}]*$";
+    static final String SAFE_TEXT = TextRules.SAFE_TEXT;
     static final String LOCAL_DATE_TIME = "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}$";
 
     private ReviewRequests() {
     }
 
-    static String trim(String s) {
-        return s == null ? null : s.strip();
-    }
-
     public record Action(
-            @NotNull @Size(min = 5, max = 500) @Pattern(regexp = NO_CONTROL_CHARACTERS) String reason,
+            @NotNull @Size(min = 5, max = 500) @Pattern(regexp = SAFE_TEXT) String reason,
             @NotNull TimeEntryStatus expectedStatus) {
 
         public Action {
-            reason = trim(reason);
+            reason = TextRules.clean(reason);
         }
     }
 
     public record Correct(
-            @NotNull @Size(min = 5, max = 500) @Pattern(regexp = NO_CONTROL_CHARACTERS) String reason,
+            @NotNull @Size(min = 5, max = 500) @Pattern(regexp = SAFE_TEXT) String reason,
             @NotNull TimeEntryStatus expectedStatus,
             @NotNull Instant expectedEffectiveTime,
             @NotNull @Pattern(regexp = LOCAL_DATE_TIME) String localTime) {
 
         public Correct {
-            reason = trim(reason);
+            reason = TextRules.clean(reason);
         }
     }
 
@@ -49,10 +47,10 @@ public final class ReviewRequests {
             @NotNull TimeEntryType type,
             @NotNull LocalDate workDate,
             @NotNull @Pattern(regexp = LOCAL_DATE_TIME) String localTime,
-            @NotNull @Size(min = 5, max = 500) @Pattern(regexp = NO_CONTROL_CHARACTERS) String reason) {
+            @NotNull @Size(min = 5, max = 500) @Pattern(regexp = SAFE_TEXT) String reason) {
 
         public Create {
-            reason = trim(reason);
+            reason = TextRules.clean(reason);
         }
     }
 }

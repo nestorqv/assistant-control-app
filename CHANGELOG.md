@@ -1,5 +1,47 @@
 # Changelog
 
+## [2026-11-09]
+
+### Tests
+- Stage 4b final round: the deadlock test waits for the database to show the request blocked (no fixed sleep); the "search text not in the URL" check reads the router location; MockMvc print-on-failure is off in every test class so a failing test never prints a PIN or token. Backend 896 passing (2 skipped), frontend 890 passing (2 skipped).
+
+### Security
+- Stage 4b reviews closed: code review, test review and security re-audit all APPROVED (`securityAudit-report/stage-4b-management.md`).
+
+## [2026-11-04]
+
+### Added
+- Stage 4b management: admin screens and APIs for branches (create, edit, deactivate), employees (create with a one-time PIN, edit, activate / deactivate, unlock, PIN reset with an optional reason) and weekly schedules.
+- Flyway V5: `version` columns on `employee` and `branch`, non-blank name checks, `audit_log.reason_code` / `reason_note`.
+- Optimistic versions with a new `RECORD_CHANGED` error; admin write rate limits (`RATE_LIMITED`); `LOCATION_VIEW` audit with a limit for entry-detail GPS.
+
+### Changed
+- Admin writers lock the actor and target employee rows in id order before any branch lock (including the review writer) and re-check that the actor is still an active admin.
+- An inactive branch is treated like "no branch assigned" at clock-in.
+- Login and SQL error logging no longer carry employee codes or SQL detail.
+- Admin employee endpoints moved from `employee/` to `admin/`.
+
+### Fixed
+- Flaky dashboard test "auto refresh reloads today when the tab becomes visible".
+- Code review findings (2026-11-05): the server's digit-run rule now treats Unicode spaces (NBSP, U+202F, U+2007, U+3000) as separators like the client; the client counts text length the same way as the server; a retired current branch is an enabled option with an "(inactiva)" suffix; PIN reset by a just-demoted admin answers 403 even for a missing employee; constraint names are read from the driver's structured error field first.
+- The PostgreSQL driver dependency is now compile scope (needed to read `PSQLException`).
+- Flaky `reauth.test.tsx`: the app test harness waits up to 5 s for lazy-loaded screens, with a 20 s test timeout.
+
+### Security
+- Stage 4b audit (2026-11-06), M-1: the admin write rate limiter and the Stage 2 clock-in limiter now match the decoded request path, so a percent-encoded URL (for example `%61` for "a") is counted.
+- L-1 (user decision, option A): the rule on resetting another admin's PIN is kept; the `ADMIN_PIN_RESET_NOT_ALLOWED` text no longer hints at how to get around it.
+- L-2: no test assertion uses a PIN as its value, so a failing test never prints one.
+- After unlocking an employee, keyboard focus moves to "Restablecer PIN" as designed.
+
+### Tests
+- Stage 4b tester (2026-11-05): last-admin and mutual-demotion guards, `RATE_LIMITED` code on 429, driver-level SQL error detail setting, stale versions on activate / deactivate, schedule time formats. Backend 878 passing (2 skipped), frontend 883 passing (2 skipped).
+
+## [2026-11-03]
+
+### Added
+- Stage 4b plan, diagrams and screen design (`docs/plans`, `docs/diagrams`, `docs/design` `stage-4b-management.md`).
+- PII guardrail in `CLAUDE.md` Project rules: PINs, ID numbers, phone numbers and full names never appear in messages, logs, audit rows or reports.
+
 ## [2026-11-02]
 
 ### Changed

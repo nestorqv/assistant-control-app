@@ -1,6 +1,21 @@
 import { apiBlob, apiRequest } from '../../api/client'
 import type { TimeEntryStatus, TimeEntryType } from '../../api/types'
-import type { AdminEntryDetail, BranchView, DashboardResponse, Page, ReviewCount, ReviewItem } from './adminTypes'
+import type {
+  AdminEmployeeDetail,
+  AdminEmployeeView,
+  AdminEntryDetail,
+  BranchInput,
+  BranchView,
+  CreatedEmployee,
+  DashboardResponse,
+  EmployeeInput,
+  Page,
+  PinResetReason,
+  PinResetResult,
+  ReviewCount,
+  ReviewItem,
+  ScheduleDay,
+} from './adminTypes'
 
 const BASE = '/api/admin'
 
@@ -23,8 +38,8 @@ export function fetchBranches(): Promise<BranchView[]> {
 
 export type EmployeeOption = { id: number; code: string; name: string; active: boolean }
 
-/** For the employee filter of the queue (loaded on first use). */
-export function fetchEmployees(): Promise<EmployeeOption[]> {
+/** The employee list; a superset of EmployeeOption, so the review filter keeps working with it. */
+export function fetchEmployees(): Promise<AdminEmployeeView[]> {
   return apiRequest(`${BASE}/employees`, { auth: true })
 }
 
@@ -81,4 +96,59 @@ export function createEntry(body: {
   reason: string
 }): Promise<AdminEntryDetail> {
   return apiRequest(`${BASE}/time-entries`, { method: 'POST', auth: true, json: body })
+}
+
+// Management (Stage 4b). Every edit / activate / deactivate carries the version the admin last saw.
+
+export function createBranch(body: BranchInput): Promise<BranchView> {
+  return apiRequest(`${BASE}/branches`, { method: 'POST', auth: true, json: body })
+}
+
+export function updateBranch(id: number, body: BranchInput & { expectedVersion: number }): Promise<BranchView> {
+  return apiRequest(`${BASE}/branches/${id}`, { method: 'PUT', auth: true, json: body })
+}
+
+export function setBranchActive(id: number, active: boolean, expectedVersion: number): Promise<BranchView> {
+  return apiRequest(`${BASE}/branches/${id}/${active ? 'activate' : 'deactivate'}`, {
+    method: 'POST',
+    auth: true,
+    json: { expectedVersion },
+  })
+}
+
+export function fetchEmployee(id: number): Promise<AdminEmployeeDetail> {
+  return apiRequest(`${BASE}/employees/${id}`, { auth: true })
+}
+
+export function createEmployee(body: EmployeeInput & { code: string }): Promise<CreatedEmployee> {
+  return apiRequest(`${BASE}/employees`, { method: 'POST', auth: true, json: body })
+}
+
+export function updateEmployee(id: number, body: EmployeeInput & { expectedVersion: number }): Promise<AdminEmployeeView> {
+  return apiRequest(`${BASE}/employees/${id}`, { method: 'PUT', auth: true, json: body })
+}
+
+export function setEmployeeActive(id: number, active: boolean, expectedVersion: number): Promise<AdminEmployeeView> {
+  return apiRequest(`${BASE}/employees/${id}/${active ? 'activate' : 'deactivate'}`, {
+    method: 'POST',
+    auth: true,
+    json: { expectedVersion },
+  })
+}
+
+export function unlockEmployee(id: number): Promise<AdminEmployeeView> {
+  return apiRequest(`${BASE}/employees/${id}/unlock`, { method: 'POST', auth: true })
+}
+
+/** The result carries the new PIN: the caller shows it once and drops it. */
+export function resetPin(id: number, reason: { reasonCode?: PinResetReason; note?: string }): Promise<PinResetResult> {
+  return apiRequest(`${BASE}/employees/${id}/pin-reset`, { method: 'POST', auth: true, json: reason })
+}
+
+export function fetchSchedule(id: number): Promise<ScheduleDay[]> {
+  return apiRequest(`${BASE}/employees/${id}/schedule`, { auth: true })
+}
+
+export function saveSchedule(id: number, expected: ScheduleDay[], days: ScheduleDay[]): Promise<ScheduleDay[]> {
+  return apiRequest(`${BASE}/employees/${id}/schedule`, { method: 'PUT', auth: true, json: { expected, days } })
 }

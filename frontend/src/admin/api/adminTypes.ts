@@ -1,6 +1,6 @@
 // Hand-written next to the Java records in backend/.../admin (src/api/contract.test.ts checks the enums).
 // Instants are ISO strings; LocalDate values are YYYY-MM-DD in the company time zone.
-import type { ReviewReason, TimeEntrySource, TimeEntryStatus, TimeEntryType } from '../../api/types'
+import type { ReviewReason, Role, TimeEntrySource, TimeEntryStatus, TimeEntryType } from '../../api/types'
 
 export type DayStatus =
   | 'REJECTED'
@@ -133,4 +133,41 @@ export type BranchView = {
   radiusMeters: number
   active: boolean
   activeEmployees: number
+  version: number
 }
+
+export type BranchInput = { name: string; latitude: number; longitude: number; radiusMeters: number }
+
+// admin/AdminEmployeeView.java: never the PIN hash, failed attempts or token version
+export type AdminEmployeeView = {
+  id: number
+  code: string
+  name: string
+  jobTitle: string | null
+  role: Role
+  active: boolean
+  branchId: number | null
+  branchName: string | null
+  branchActive: boolean | null
+  consentGiven: boolean
+  locked: boolean
+  lockedUntil: string | null
+  hasSchedule: boolean
+  version: number
+}
+
+export type PinResetReason = 'FORGOT_PIN' | 'ACCOUNT_LOCKED' | 'POSSIBLE_MISUSE' | 'OTHER'
+export const PIN_RESET_REASONS = ['FORGOT_PIN', 'ACCOUNT_LOCKED', 'POSSIBLE_MISUSE', 'OTHER'] as const satisfies readonly PinResetReason[]
+
+// admin/AdminEmployeeDetail.java: the view plus the latest PIN reset (never the PIN)
+export type LastPinReset = { at: string; byName: string | null; reasonCode: PinResetReason | null; note: string | null }
+export type AdminEmployeeDetail = AdminEmployeeView & { lastPinReset: LastPinReset | null }
+
+// The only two responses that carry a PIN (Cache-Control: no-store). Never put them in a shared cache.
+export type CreatedEmployee = { employee: AdminEmployeeView; pin: string }
+export type PinResetResult = { employee: AdminEmployeeDetail; pin: string }
+
+export type EmployeeInput = { name: string; jobTitle: string | null; role: Role; branchId: number | null }
+
+export type IsoDay = 1 | 2 | 3 | 4 | 5 | 6 | 7
+export type ScheduleDay = { dayOfWeek: IsoDay; startTime: string; endTime: string; graceMinutes: number }

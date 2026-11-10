@@ -29,4 +29,22 @@ public class AuditService {
         repository.save(new AuditLogEntry(companyId, actorId, action.name(), targetType.name(), targetId, details,
                 Instant.now(clock)));
     }
+
+    /**
+     * Same transaction as the caller (MANDATORY: calling it without one is a programming error). Management
+     * writers use it so the audit row and the change commit or roll back together, and so the insert never waits
+     * on a row lock the caller itself holds. details: ids, enum values and field names only.
+     */
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void recordInTransaction(Long companyId, Long actorId, AuditAction action, AuditTargetType targetType,
+            Long targetId, String details, String reasonCode, String reasonNote) {
+        repository.save(new AuditLogEntry(companyId, actorId, action.name(), targetType.name(), targetId, details,
+                reasonCode, reasonNote, Instant.now(clock)));
+    }
+
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void recordInTransaction(Long companyId, Long actorId, AuditAction action, AuditTargetType targetType,
+            Long targetId, String details) {
+        recordInTransaction(companyId, actorId, action, targetType, targetId, details, null, null);
+    }
 }

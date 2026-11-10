@@ -106,7 +106,7 @@ describe('PinKeypad', () => {
     const { container } = renderWithI18n(<Harness />)
     for (const digit of '48207315') await user.click(screen.getByRole('button', { name: digit }))
     expect(container.querySelector('input')).toBeNull()
-    expect(container.textContent).not.toContain('48207315')
+    expect((container.textContent ?? '').includes('48207315'), 'the keypad shows the PIN').toBe(false)
   })
 })
 
